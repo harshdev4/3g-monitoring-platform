@@ -13,7 +13,7 @@ const QuickActionsCard = ({
 }) => {
   return (
     <div className="rounded-lg border border-[#E5EAF1] bg-white p-4">
-      <h3 className="text-sm font-semibold text-[#102746]">
+      <h3 className="text-base font-semibold text-[#102746]">
         Quick Actions
       </h3>
 
@@ -38,11 +38,11 @@ const QuickActionsCard = ({
       </div>
 
       <div className="mt-5 border-t border-[#EEF1F5] pt-4">
-        <p className="text-xs font-medium text-[#334155]">
+        <p className="text-[13px] font-medium text-[#334155]">
           {evidenceCount} submissions awaiting review
         </p>
 
-        <p className="mt-1 text-[11px] text-[#8A98AB]">
+        <p className="mt-1 text-xs text-[#8A98AB]">
           {evidenceText}
         </p>
 

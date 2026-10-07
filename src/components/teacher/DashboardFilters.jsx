@@ -31,9 +31,7 @@ const DashboardFilters = () => {
 
   return (
     <section className="mt-3 rounded-md border border-[#E5EAF1] bg-white p-3 font-inter">
-      <p className="mb-2 text-[13px] font-medium text-[#102746]">
-        Filters
-      </p>
+      <p className="mb-2 text-[13px] font-medium text-[#102746]">Filters</p>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
         {filters.map((filter) => (

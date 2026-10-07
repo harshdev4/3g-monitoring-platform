@@ -44,7 +44,7 @@ const page = () => {
 
   const distributionData = [
     {
-      label: "At-Risk",
+      label: "Gradual",
       value: 30,
       percentage: 25,
       color: "#EF4444",
@@ -56,7 +56,7 @@ const page = () => {
       color: "#F59E0B",
     },
     {
-      label: "Stable",
+      label: "Galant",
       value: 36,
       percentage: 30,
       color: "#10B981",
@@ -65,7 +65,7 @@ const page = () => {
 
   const progressionSeries = [
     {
-      label: "At-Risk",
+      label: "Gradual",
       color: "#EF4444",
       data: [42, 50, 60, 70],
     },
@@ -75,7 +75,7 @@ const page = () => {
       data: [42, 57, 68, 82],
     },
     {
-      label: "Stable",
+      label: "Gallant",
       color: "#10B981",
       data: [42, 52, 64, 78],
     },
@@ -192,14 +192,14 @@ const page = () => {
         <div className="mt-3">
           <MetricCards metrics={metrics} />
         </div>
-
+ 
         {/* Charts */}
         <div className="mt-3 grid gap-3 lg:grid-cols-2">
           <DistributionCard
             total={120}
             subtitle="Current aggregate · MSE-1 & checkpoint"
             data={distributionData}
-            note="Subject categories may differ from the aggregate snapshot."
+            note=""
           />
 
           <ProgressionCard

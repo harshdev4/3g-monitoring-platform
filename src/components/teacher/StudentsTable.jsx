@@ -9,7 +9,7 @@ const StudentsTable = ({
     <div className="rounded-lg border border-[#E5EAF1] bg-white">
       <div className="flex items-start justify-between border-b border-[#EEF1F5] p-4">
         <div>
-          <h3 className="text-sm font-semibold text-[#102746]">
+          <h3 className="text-base font-semibold text-[#102746]">
             My Students
           </h3>
 
@@ -83,7 +83,7 @@ const StudentsTable = ({
 
                 <td className="px-4 py-3">
                   <span
-                    className={`rounded-full px-2 py-1 text-[10px] font-medium ${student.statusClass}`}
+                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${student.statusClass}`}
                   >
                     {student.assessment}
                   </span>

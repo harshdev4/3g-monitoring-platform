@@ -133,7 +133,7 @@ const ProgressionCard = ({
   return (
     <div className="min-w-0 rounded-lg border border-[#E5EAF1] bg-white p-4">
       <div className="min-w-0">
-        <h3 className="text-sm font-semibold text-[#102746]">
+        <h3 className="text-base font-semibold text-[#102746]">
           3G Progression
         </h3>
 
