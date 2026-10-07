@@ -6,12 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:setup": "node src/scripts/db-setup.mjs",
+    "seed": "node src/scripts/seed-from-excel.mjs"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
+    "dotenv": "^18.0.5",
+    "lucide-react": "^1.52.0",
     "next": "16.3.8",
+    "pg": "^8.23.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "19.2.8",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
