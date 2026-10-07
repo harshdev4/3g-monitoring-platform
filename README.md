@@ -1,4 +1,4 @@
-3g-project/
+<!-- 3g-project/
 │
 ├── app/
 │   │
@@ -78,4 +78,4 @@
 ├── .env
 ├── next.config.js
 ├── package.json
-└── jsconfig.json
+└── jsconfig.json -->
