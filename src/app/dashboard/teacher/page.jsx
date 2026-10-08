@@ -85,7 +85,7 @@ const page = () => {
     {
       label: "Upload Marks",
       type: "upload",
-      href: "/dashboard/teacher/marks",
+      href: "/dashboard/teacher/upload-marks/",
     },
     {
       label: "Create Action",
@@ -116,7 +116,7 @@ const page = () => {
       rollNo: "1027",
       className: "MCA-1A",
       attendance: 65,
-      assessment: "At-Risk",
+      assessment: "Gradual",
       statusClass: "bg-red-50 text-red-500",
     },
     {
@@ -134,7 +134,7 @@ const page = () => {
       rollNo: "1028",
       className: "MCA-1A",
       attendance: 94,
-      assessment: "Stable",
+      assessment: "Gallant",
       statusClass: "bg-emerald-50 text-emerald-500",
     },
     {
@@ -143,7 +143,7 @@ const page = () => {
       rollNo: "1030",
       className: "MCA-1A",
       attendance: 68,
-      assessment: "At-Risk",
+      assessment: "Gradual",
       statusClass: "bg-red-50 text-red-500",
     },
   ];
