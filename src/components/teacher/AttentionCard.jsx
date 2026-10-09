@@ -11,7 +11,7 @@ const AttentionCard = ({
     <div className="rounded-lg border border-[#E5EAF1] bg-white p-4">
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-[#102746]">
+          <h3 className="text-base font-semibold text-[#102746]">
             {title}
           </h3>
 
@@ -37,21 +37,21 @@ const AttentionCard = ({
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold text-[#334155]">
+                <p className="text-[13px] font-semibold text-[#334155]">
                   {student.name}
                 </p>
 
-                <p className="mt-0.5 text-[11px] text-[#8A98AB]">
+                <p className="mt-0.5 text-[12px] text-[#8A98AB]">
                   {student.rollNo}
                 </p>
               </div>
 
-              <span className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-medium text-red-500">
+              <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-medium text-red-500">
                 At-Risk
               </span>
             </div>
 
-            <p className="mt-2 text-[11px] leading-5 text-[#60708A]">
+            <p className="mt-2 text-[12px] leading-5 text-[#60708A]">
               {student.reason}
             </p>
           </div>

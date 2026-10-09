@@ -31,7 +31,7 @@ const Sidebar = () => {
     {
       label: "Upload Marks",
       icon: Upload,
-      href: "/dashboard/teacher/marks",
+      href: "/dashboard/teacher/upload-marks",
     },
     {
       label: "At-Risk Students",

@@ -8,7 +8,7 @@ const MonitoringCard = ({
 }) => {
   return (
     <div className="rounded-lg border border-[#E5EAF1] bg-white p-4">
-      <h3 className="text-sm font-semibold text-[#102746]">
+      <h3 className="text-base font-semibold text-[#102746]">
         {title}
       </h3>
 
@@ -17,11 +17,11 @@ const MonitoringCard = ({
           <div key={item.label}>
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-medium text-[#334155]">
+                <p className="text-[13px] font-semibold text-[#334155]">
                   {item.value} {item.label}
                 </p>
 
-                <p className="mt-1 text-[11px] text-[#8A98AB]">
+                <p className="mt-1 text-xs text-[#8A98AB]">
                   {item.description}
                 </p>
               </div>
