@@ -1,3 +1,5 @@
+import getAssignedCourses from "@/app/api/teachers/getAssignedCourses";
+import getUser from "@/app/api/users/getUser";
 import Header from "@/components/dashboard/Header";
 import UserWorkSpace from "@/components/dashboard/UserWorkSpace";
 import AttentionCard from "@/components/teacher/AttentionCard";
@@ -9,8 +11,17 @@ import ProgressionCard from "@/components/teacher/ProgressionCard";
 import QuickActionsCard from "@/components/teacher/QuickActionsCard";
 import RecentActivityCard from "@/components/teacher/RecentActivityCard";
 import StudentsTable from "@/components/teacher/StudentsTable";
+import TeacherStoreInitializer from "@/components/teacher/TeacherStoreInitializer";
 
-const page = () => {
+const page = async () => {
+
+  const teacher = await getUser("annu.yadav@kiet.edu");
+  const assignedCourses = await getAssignedCourses(teacher.empId);
+  
+  if(!teacher){
+    return <p>User not found.</p>
+  }
+
   const metrics = [
     {
       type: "students",
@@ -180,19 +191,20 @@ const page = () => {
       description: "Activity completed",
     },
   ];
-  return (
+  return ( 
     <div>
+      <TeacherStoreInitializer teacher={teacher}/>
       <Header></Header>
       <div className="p-5">
         <UserWorkSpace
-          user="Teacher"
-          name="Harsh Sharma"
+          user={`${teacher.role == 'teacher' && 'Teacher' || teacher.role == 'student' && 'Student' || teacher.role == 'dean' || 'Dean'}`}
+          name={teacher.name}
           pageTitle="Dashboard"
-          description="Department of Computer Applications · Assigned classes · Academic Year 2026–27"
+          description={`${teacher.dept} · Academic Year 2026–27`}
           welcomeDescription="Track your students, support their progress and review today's priorities."
         />
 
-        <DashboardFilters />
+        <DashboardFilters  assignedCourses={assignedCourses} />
         {/* Metrics */}
 
         <div className="mt-3">
@@ -232,7 +244,7 @@ const page = () => {
 
         {/* Students */}
         <div className="mt-3">
-          <StudentsTable students={students} subtitle="MCA-1A · 120 students" />
+          <StudentsTable students={students}/>
         </div>
 
         {/* Bottom cards */}
