@@ -184,7 +184,13 @@ const page = () => {
     <div>
       <Header></Header>
       <div className="p-5">
-        <UserWorkSpace user={"Teacher"} name={"Prof. Harsh Sharma"} />
+        <UserWorkSpace
+          user="Teacher"
+          name="Harsh Sharma"
+          pageTitle="Dashboard"
+          description="Department of Computer Applications · Assigned classes · Academic Year 2026–27"
+          welcomeDescription="Track your students, support their progress and review today's priorities."
+        />
 
         <DashboardFilters />
         {/* Metrics */}
@@ -192,7 +198,7 @@ const page = () => {
         <div className="mt-3">
           <MetricCards metrics={metrics} />
         </div>
- 
+
         {/* Charts */}
         <div className="mt-3 grid gap-3 lg:grid-cols-2">
           <DistributionCard
@@ -226,10 +232,7 @@ const page = () => {
 
         {/* Students */}
         <div className="mt-3">
-          <StudentsTable
-            students={students}
-            subtitle="MCA-1A · 120 students"
-          />
+          <StudentsTable students={students} subtitle="MCA-1A · 120 students" />
         </div>
 
         {/* Bottom cards */}
@@ -240,9 +243,7 @@ const page = () => {
             actionLabel="View Actions / Actions"
           />
 
-          <RecentActivityCard
-            activities={recentActivities}
-          />
+          <RecentActivityCard activities={recentActivities} />
         </div>
       </div>
       <div className="lg:hidden w-screen h-16"></div>
