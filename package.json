@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:setup": "node src/scripts/db-setup.mjs",
-    "seed": "node src/scripts/seed-from-excel.mjs"
+    "db:setup": "node --env-file=.env src/scripts/db-setup.mjs",
+    "seed:students": "node --env-file=.env src/scripts/seed-students.mjs",
+    "seed:teachers": "node --env-file=.env src/scripts/seed-teachers.mjs",
+    "seed:teachers-courses": "node --env-file=.env src/scripts/seed-teachers-courses.mjs",
+    "seed:courses": "node --env-file=.env src/scripts/seed-courses.mjs"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
