@@ -1,97 +1,59 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env" });
-
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import pg from "pg";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 
-const { Pool } = pg;
+const { Client } = pg;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+async function createTables() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is missing from your .env file.");
+  }
 
-const schemaPath = path.join(
-  __dirname,
-  "../database/schema.sql"
-);
+  const schemaPath = path.resolve("src", "database", "schema.sql");
+  const schemaSQL = await readFile(schemaPath, "utf8");
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
-
-async function setupDatabase() {
-  const client = await pool.connect();
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeoutMillis: 15000,
+  });
 
   try {
-    console.log("");
-    console.log("========================================");
-    console.log("3Gs Project - Database Setup");
-    console.log("========================================");
-    console.log("");
-
-    console.log(`Schema file: ${schemaPath}`);
-
-    if (!fs.existsSync(schemaPath)) {
-      throw new Error(
-        `schema.sql not found at: ${schemaPath}`
-      );
-    }
-
-    const schema = fs.readFileSync(
-      schemaPath,
-      "utf8"
-    );
-
-    if (!schema.trim()) {
-      throw new Error(
-        "schema.sql is empty."
-      );
-    }
-
-    console.log("");
-    console.log("Connecting to PostgreSQL...");
+    await client.connect();
+    console.log("Connected to Aiven PostgreSQL.");
 
     await client.query("BEGIN");
 
-    console.log("Executing schema...");
-
-    await client.query(schema);
+    await client.query(schemaSQL);
 
     await client.query("COMMIT");
 
-    console.log("");
-    console.log("========================================");
-    console.log("DATABASE SETUP COMPLETED");
-    console.log("========================================");
-    console.log("");
-    console.log("Tables are ready.");
-    console.log("");
+    console.log("All tables created successfully.");
+
+    const result = await client.query(`
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
+      ORDER BY tablename;
+    `);
+
+    console.log("\nTables in public schema:");
+    console.table(result.rows);
   } catch (error) {
-    await client.query("ROLLBACK");
+    await client.query("ROLLBACK").catch(() => {});
 
-    console.error("");
-    console.error("========================================");
-    console.error("DATABASE SETUP FAILED");
-    console.error("========================================");
-    console.error("");
+    console.error("Failed to create tables:");
+    console.error(error.message);
 
-    console.error(error);
-
-    console.error("");
-    console.error(
-      "All schema changes have been rolled back."
-    );
-    console.error("");
-    
     process.exitCode = 1;
   } finally {
-    client.release();
-    await pool.end();
+    await client.end();
   }
 }
 
-setupDatabase();
+createTables().catch((error) => {
+  console.error(error.message);
+  process.exitCode = 1;
+});

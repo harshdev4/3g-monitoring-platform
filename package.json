@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:setup": "node src/scripts/db-setup.mjs",
-    "seed": "node src/scripts/seed-from-excel.mjs"
+    "db:setup": "node --env-file=.env src/scripts/db-setup.mjs",
+    "seed:students": "node --env-file=.env src/scripts/seed-students.mjs",
+    "seed:teachers": "node --env-file=.env src/scripts/seed-teachers.mjs",
+    "seed:teachers-courses": "node --env-file=.env src/scripts/seed-teachers-courses.mjs",
+    "seed:courses": "node --env-file=.env src/scripts/seed-courses.mjs"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
@@ -19,10 +22,13 @@
     "react": "19.2.8",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.8",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/node": "26.6.4",
+    "@types/react": "19.3.0",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",

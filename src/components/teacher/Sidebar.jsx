@@ -12,6 +12,10 @@ import {
   FileBarChart2,
   UserCircle,
   MoreHorizontal,
+  ChartNoAxesCombined,
+  TriangleAlert,
+  GraduationCap,
+  CircleHelp,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -34,8 +38,13 @@ const Sidebar = () => {
       href: "/dashboard/teacher/upload-marks",
     },
     {
+      label: "Performance",
+      icon: ChartNoAxesCombined,
+      href: "/dashboard/teacher/performance",
+    },
+    {
       label: "At-Risk Students",
-      icon: UserRoundX,
+      icon: TriangleAlert,
       href: "/dashboard/teacher/at-risk",
     },
     {
@@ -83,9 +92,9 @@ const Sidebar = () => {
   return (
     <>
       {/* ================= DESKTOP SIDEBAR ================= */}
-      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-21 bg-[#102746] px-5 py-6 text-white lg:block lg:w-64">
+      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-21 bg-[#142844] px-4 py-6 text-white lg:block lg:w-64">
         {/* Logo */}
-        <div className="mb-8">
+        <div className="mb-5">
           <Link
             href="/"
             className="font-inter text-3xl font-semibold text-white no-underline"
@@ -100,19 +109,19 @@ const Sidebar = () => {
 
         {/* Navigation */}
         <nav>
-          <ul className="space-y-1">
+          <ul>
             {menuItems.map((navItem) => {
               const Icon = navItem.icon;
               const active = isActive(navItem.href);
 
               return (
-                <li key={navItem.href}>
+                <li className="pb-0.5" key={navItem.href}>
                   <Link
                     href={navItem.href}
                     title={navItem.label}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors ${
+                    className={`flex items-center gap-2.5 rounded-md px-2.5 py-2.5 text-xs transition-colors ${
                       active
-                        ? "bg-white/10 text-white"
+                        ? "bg-[#294568] font-medium text-white"
                         : "text-[#B8C7DD] hover:bg-white/10 hover:text-white"
                     }`}
                   >
@@ -131,6 +140,9 @@ const Sidebar = () => {
             })}
           </ul>
         </nav>
+        <div className="absolute inset-x-4 bottom-6 space-y-7 text-[11px] text-[#B8C7DD]">
+          <Link href="/dashboard/teacher/help" className="flex items-center gap-2.5 rounded-md py-2 hover:text-white"><CircleHelp size={17} />Help &amp; Support</Link>
+        </div>
       </aside>
 
       {/* ================= MOBILE BOTTOM BAR ================= */}

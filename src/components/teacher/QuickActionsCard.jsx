@@ -5,6 +5,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
+
 const QuickActionsCard = ({
   actions,
   evidenceCount,
