@@ -13,8 +13,8 @@ export default function UploadHeader({ currentPhase, onViewHistory }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 ">
         <div>
-          <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Teacher workspace</p>
-          <h1 className="text-[27px] font-bold text-[#0f172a] mt-1">Upload Marks</h1>
+          <p className="text-[10px] font-medium text-slate-500  tracking-wide">Teacher workspace</p>
+          <h1 className="text-[27px] font-semibold text-[#0f172a] mt-1">Upload Marks</h1>
           <p className="text-[12px] font-normal text-slate-500 mt-1">
             Import assessment marks, validate student records and publish a checkpoint.
           </p>

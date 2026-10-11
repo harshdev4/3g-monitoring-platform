@@ -163,7 +163,7 @@ const UploadMarks = () => {
   return (
     <>
       <Header/>
-      <div className=" min-h-screen text-[#0f172a] pb-12" style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
+      <div className=" min-h-screen text-[#0f172a] pb-12" >
         <main className="bg-[E4EAF2] mx-auto max-w-[1400px] p-5 md:p-5 space-y-5">
 
           {/* Modular Header */}

@@ -96,8 +96,8 @@ export default function ValidationTable({
         </div>
         
         <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-          <table className="w-full text-left text-[13px] whitespace-nowrap table-fixed">
-            <thead className="bg-slate-50 text-slate-500 text-[12px] font-semibold border-b border-slate-200 sticky top-0 z-10">
+          <table className="w-full text-left text-[12px] whitespace-nowrap table-fixed">
+            <thead className="bg-slate-50 text-slate-500 text-[10px] font-semibold border-b border-slate-200 sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-4 w-[20%]">Student Name</th>
                 <th className="px-4 py-4 w-[12%]">Roll no.</th>
@@ -211,14 +211,14 @@ export default function ValidationTable({
       {/* Submission Confirmation */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row justify-between items-center">
         <div>
-          <h2 className="text-[16px] font-semibold text-slate-800 mb-1">Submission confirmation</h2>
-          <p className="text-[13px] font-normal text-slate-500">Publish {parsedData.length} records? This will update performance and subject-wise 3G categories.</p>
+          <h2 className="text-[17px] font-semibold text-slate-800 mb-1">Submission confirmation</h2>
+          <p className="text-[12px] font-normal text-slate-500">Publish {parsedData.length} records? This will update performance and subject-wise 3G categories.</p>
         </div>
         <button 
           disabled={errorCount > 0} 
            
           onClick={onConfirm}
-          className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-[13px] shadow-sm transition disabled:opacity-50"
+          className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-[12px] shadow-sm transition disabled:opacity-50"
         >
           Confirm & submit
         </button>
