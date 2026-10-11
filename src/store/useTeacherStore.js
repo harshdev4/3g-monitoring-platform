@@ -6,6 +6,7 @@ const initialFilters = {
     className: "",
     courses: "",
     assessment: "",
+    courseName:""
 };
 
 const initialTeacher = {

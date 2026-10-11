@@ -71,10 +71,10 @@ const DashboardFilters = () => {
           String(course.semester) === String(filters.semester) &&
           course.className === filters.className
       )
-      .map((course) => ({ value: course.course_code, label: course.course })));
+      .map((course) => ({courseName: course.course, value: course.course_code, label: course.course })));
 
 
-  const updateFilter = (key, value) => {
+  const updateFilter = (key, label, value) => {
     if (key === "program") {
       setFilters({
         program: value,
@@ -94,6 +94,9 @@ const DashboardFilters = () => {
         courses: "",
       });
     } else {
+      if(key=="courses"){
+        setFilters({courseName: label})
+      }
       setFilters({ [key]: value });
     }
   };
@@ -120,6 +123,9 @@ const DashboardFilters = () => {
       );
 
       if (filter.options.length > 0 && !hasCurrentValue) {
+        if(filter.key == "courses"){
+          setFilters({courseName: filter.options[0].courseName});
+        }
         setFilters({
           [filter.key]: filter.options[0].value,
         });
@@ -130,6 +136,7 @@ const DashboardFilters = () => {
         setFilters({
           [filter.key]: "",
         });
+        setFilters({courseName: ""});
       }
     });
 
@@ -157,7 +164,7 @@ const DashboardFilters = () => {
                 id={`filter-${filter.key}`}
                 value={filters[filter.key] ?? ""}
                 onChange={(event) =>
-                  updateFilter(filter.key, event.target.value)
+                  updateFilter(filter.key, filter.label, event.target.value)
                 }
                 className="h-8 w-full appearance-none rounded border border-[#DCE3EC] bg-white px-2 pr-7 text-[12px] text-[#253B59] outline-none transition focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/20"
               >
