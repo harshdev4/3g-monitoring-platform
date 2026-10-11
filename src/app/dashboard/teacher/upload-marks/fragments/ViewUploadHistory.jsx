@@ -11,7 +11,13 @@ export default function ViewUploadHistory({ onBackToUpload, historyData }) {
   const successCount = historyData.filter(item => item.status === "Success").length;
   const partialCount = historyData.filter(item => item.status === "Partial").length;
   const failedCount = historyData.filter(item => item.status === "Failed").length;
-
+const filterDataHistory = [
+  { id: "class", label: "Class / Section", defaultOption: "All assigned classes" },
+  { id: "subject", label: "Subject", defaultOption: "All subjects" },
+  { id: "assessment", label: "Assessment", defaultOption: "All assessments" },
+  { id: "status", label: "Import status", defaultOption: "All statuses" },
+  { id: "dateRange", label: "Date range", defaultOption: "Aug-Oct 2026" },
+];
   return (
     <>
     <Header/>
@@ -21,15 +27,15 @@ export default function ViewUploadHistory({ onBackToUpload, historyData }) {
         {/* HEADER AREA */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <p className="text-[12px] font-medium text-slate-500 uppercase tracking-wide">Teacher workspace / Upload Marks / History</p>
-            <h1 className="text-2xl font-bold text-slate-800 mt-1">Upload History</h1>
-            <p className="text-[13px] font-normal text-slate-500 mt-1">
+            <p className="text-[10px] font-medium text-slate-500  tracking-wide">Teacher workspace / Upload Marks / History</p>
+            <h1 className="text-[27px] font-bold text-slate-800 mt-1">Upload History</h1>
+            <p className="text-[12px] font-normal text-slate-500 mt-1">
               Assessment imports - Faculty audit trail - Academic Year 2026-27
             </p>
           </div>
           <button 
             onClick={onBackToUpload} 
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg text-[13px] transition shadow-sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg text-[12px] transition shadow-sm"
           >
             Upload Marks
           </button>
@@ -38,44 +44,28 @@ export default function ViewUploadHistory({ onBackToUpload, historyData }) {
         {/* FILTERS & SEARCH */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-            <div>
-              <label className="block text-[12px] font-semibold text-slate-600 mb-1.5">Class / Section</label>
-              <select className="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] text-slate-700 outline-none focus:border-blue-500 bg-white">
-                <option>All assigned classes</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-slate-600 mb-1.5">Subject</label>
-              <select className="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] text-slate-700 outline-none focus:border-blue-500 bg-white">
-                <option>All subjects</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-slate-600 mb-1.5">Assessment</label>
-              <select className="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] text-slate-700 outline-none focus:border-blue-500 bg-white">
-                <option>All assessments</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-slate-600 mb-1.5">Import status</label>
-              <select className="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] text-slate-700 outline-none focus:border-blue-500 bg-white">
-                <option>All statuses</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-slate-600 mb-1.5">Date range</label>
-              <select className="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] text-slate-700 outline-none focus:border-blue-500 bg-white">
-                <option>Aug-Oct 2026</option>
-              </select>
-            </div>
-          </div>
+  {filterDataHistory.map((filter) => (
+    <div key={filter.id}>
+      <label className="block text-[11px] font-semibold text-slate-600 mb-1.5">
+        {filter.label}
+      </label>
+      <select 
+        name={filter.id}
+        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-[12px] text-slate-700 outline-none focus:border-blue-500 bg-white"
+      >
+        <option value="">{filter.defaultOption}</option>
+       
+      </select>
+    </div>
+  ))}
+</div>
           
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
               type="text" 
               placeholder="Search file name or import ID" 
-              className="w-full border border-slate-300 rounded-lg pl-9 pr-4 py-2 text-[13px] outline-none focus:border-blue-500"
+              className="w-full border border-slate-300 rounded-lg pl-9 pr-4 py-2 text-[12px] outline-none focus:border-blue-500"
             />
           </div>
         </div>

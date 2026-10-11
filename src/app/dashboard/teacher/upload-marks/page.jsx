@@ -62,7 +62,14 @@ const UploadMarks = () => {
         statusText = `Exceeds max (${max}) · Corrected to ${max}`;
         correctedMarks = max.toString();
         errors++; 
-      } else if (absent === 'Yes') {
+      } else if (absent === 'No' && numericMarks < 0) {
+        status = 'corrected';
+        statusText = `Negative max detected (marks<0)`;
+        correctedMarks = "Not allow"  
+        errors++; 
+      }
+      
+      else if (absent === 'Yes') {
         status = 'absent';
         statusText = 'Valid · Absent';
         correctedMarks = '—';

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FileSpreadsheet, AlertCircle, Save, X, Edit3, Trash2 } from "lucide-react";
+import useTeacherStore from "@/store/useTeacherStore";
 
 export default function ValidationTable({
   file,
@@ -50,6 +51,8 @@ export default function ValidationTable({
     }
   };
 
+  const filters = useTeacherStore((state) => state.filters);
+
   return (
     <div className="space-y-6">
       
@@ -60,15 +63,15 @@ export default function ValidationTable({
             <FileSpreadsheet size={24} />
           </div>
           <div>
-            <h3 className="text-[13px] font-semibold text-slate-800">{file?.name}</h3>
-            <p className="text-[12px] font-normal text-slate-500 mt-0.5">
+            <h3 className="text-[12px] font-semibold text-slate-800">{file?.name}</h3>
+            <p className="text-[11px] font-normal text-slate-500 mt-0.5">
               {file ? (file.size / 1024).toFixed(1) : "0"} KB · {parsedData.length} rows · Validation complete
             </p>
           </div>
         </div>
         <button 
           onClick={handleReupload}
-          className="bg-white border border-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg text-[13px] shadow-sm hover:bg-slate-50"
+          className="bg-white border border-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg text-[12px] shadow-sm hover:bg-slate-50"
         >
           Replace file
         </button>
@@ -88,7 +91,8 @@ export default function ValidationTable({
       {/* Table Data */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-5 border-b border-slate-100">
-          <h2 className="text-[16px] font-semibold text-slate-800">Preview & validate marks</h2>
+          <h2 className="text-[17px] font-semibold text-slate-800">Preview & validate marks</h2>
+          <p className="text-[11px] font-normal text-[#66758D]">Sem-{filters.semester} . {filters.className} . {filters.courseName}</p>
         </div>
         
         <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
@@ -194,7 +198,7 @@ export default function ValidationTable({
             </button>
             <button 
               disabled={errorCount > 0}
-              // onClick={() => setCurrentPhase(3)}
+              
               onClick={onConfirm}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg text-[13px] shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -212,7 +216,7 @@ export default function ValidationTable({
         </div>
         <button 
           disabled={errorCount > 0} 
-          // onClick={() => setCurrentPhase(3)} 
+           
           onClick={onConfirm}
           className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-[13px] shadow-sm transition disabled:opacity-50"
         >
