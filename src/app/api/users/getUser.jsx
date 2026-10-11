@@ -1,5 +1,4 @@
 import pool from "@/config/db.config";
-import useUserStore from "@/store/useUserStore";
 
 const getUser = async (mailId) => {
     let result = await pool.query(
