@@ -1,5 +1,3 @@
-import { Plus } from "lucide-react";
-
 const recommendations = [
   {
     id: 1,
@@ -34,7 +32,7 @@ const RecommendedFacultyFollowUp = ({
       <div className="mt-4 space-y-4">
         {recommendations.map((item) => (
           <div key={item.id}>
-            <h3 className="text-xs font-semibold text-[#172B4D]">
+            <h3 className="text-[13px] font-semibold text-[#172B4D]">
               {item.id}. {item.title}
             </h3>
 
@@ -50,7 +48,6 @@ const RecommendedFacultyFollowUp = ({
         onClick={() => onCreateAction?.(student)}
         className="mt-4 inline-flex items-center gap-1 rounded-md bg-[#2864E8] px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-700"
       >
-        <Plus size={16} />
         Create / Assign Action
       </button>
     </section>

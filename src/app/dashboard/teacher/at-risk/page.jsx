@@ -325,7 +325,7 @@ const Page = () => {
         <UserWorkSpace
           user="Teacher"
           pageTitle="At-Risk Students"
-          description="Early support priorities · DBMS · MSE-II · Academic Year 2026–27"
+          description="Early support priorities · Academic Year 2026–27"
           welcomeMessage="At-Risk Student Monitoring"
           welcomeDescription="Identify students who need attention and plan timely interventions."
           showAction

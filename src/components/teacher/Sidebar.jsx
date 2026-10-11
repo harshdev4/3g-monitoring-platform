@@ -94,7 +94,7 @@ const Sidebar = () => {
       {/* ================= DESKTOP SIDEBAR ================= */}
       <aside className="fixed left-0 top-0 z-50 hidden h-screen w-21 bg-[#142844] px-4 py-6 text-white lg:block lg:w-64">
         {/* Logo */}
-        <div className="mb-8">
+        <div className="mb-5">
           <Link
             href="/"
             className="font-inter text-3xl font-semibold text-white no-underline"
@@ -109,13 +109,13 @@ const Sidebar = () => {
 
         {/* Navigation */}
         <nav>
-          <ul className="space-y-1">
+          <ul>
             {menuItems.map((navItem) => {
               const Icon = navItem.icon;
               const active = isActive(navItem.href);
 
               return (
-                <li key={navItem.href}>
+                <li className="pb-[2px]" key={navItem.href}>
                   <Link
                     href={navItem.href}
                     title={navItem.label}
@@ -141,11 +141,6 @@ const Sidebar = () => {
           </ul>
         </nav>
         <div className="absolute inset-x-4 bottom-6 space-y-7 text-[11px] text-[#B8C7DD]">
-          <div className="space-y-1.5">
-            <p>Department of Computer<br />Applications</p>
-            <p>MCA · Academic Year 2026–27</p>
-            <GraduationCap size={20} className="mt-2" />
-          </div>
           <Link href="/dashboard/teacher/help" className="flex items-center gap-2.5 rounded-md py-2 hover:text-white"><CircleHelp size={17} />Help &amp; Support</Link>
         </div>
       </aside>

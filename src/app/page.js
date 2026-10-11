@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
+import getUser from "./api/users/getUser";
 
-export default function Home() {
+export default async function Home() {
   redirect("/dashboard/teacher");
 }

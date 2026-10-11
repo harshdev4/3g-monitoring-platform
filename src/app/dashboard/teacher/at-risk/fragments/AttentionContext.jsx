@@ -2,7 +2,7 @@ const AttentionContext = ({ student, onViewDetails }) => {
   if (!student) {
     return (
       <section className="rounded-lg border border-[#E2E8F0] bg-white p-5">
-        <h2 className="text-sm font-semibold text-[#17315A]">
+        <h2 className="text-base font-semibold text-[#17315A]">
           Attention context
         </h2>
         <p className="mt-3 text-xs text-[#7183A3]">
@@ -29,7 +29,7 @@ const AttentionContext = ({ student, onViewDetails }) => {
 
   return (
     <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
-      <h2 className="text-sm font-semibold text-[#17315A]">
+      <h2 className="text-base font-semibold text-[#17315A]">
         Attention context · {name}
       </h2>
 
@@ -42,14 +42,14 @@ const AttentionContext = ({ student, onViewDetails }) => {
           • {riskLevel}
         </span>
 
-        <span className="rounded-md bg-red-50 px-2 py-1 text-[9px] font-medium text-red-500">
+        <span className="rounded-md bg-red-50 px-2 py-1 text-[10px] font-medium text-red-500">
           • {assessment}
         </span>
       </div>
 
       <div className="mt-4 space-y-4 text-[11px]">
         <div>
-          <h3 className="font-semibold text-[#172B4D]">
+          <h3 className="text-[13px] font-semibold text-[#172B4D]">
             {warningSignals.length || 3} concurrent warning signals
           </h3>
 
@@ -61,7 +61,7 @@ const AttentionContext = ({ student, onViewDetails }) => {
         </div>
 
         <div>
-          <h3 className="font-semibold text-[#172B4D]">
+          <h3 className="text-[13px] font-semibold text-[#172B4D]">
             Previous semester status
           </h3>
 
@@ -80,7 +80,7 @@ const AttentionContext = ({ student, onViewDetails }) => {
       <button
         type="button"
         onClick={() => onViewDetails?.(student)}
-        className="mt-3 inline-flex items-center gap-2 rounded-md border border-[#E2E8F0] px-3 py-2 text-[10px] font-semibold text-[#17315A] transition hover:bg-slate-50"
+        className="mt-3 inline-flex items-center gap-2 rounded-md border border-[#E2E8F0] px-3 py-2 text-[12px] font-semibold text-[#17315A] transition hover:bg-slate-50"
       >
         View Student Detail
       </button>
