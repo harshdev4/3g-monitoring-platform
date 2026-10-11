@@ -54,7 +54,7 @@ const MetricCards = () => {
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {metrics.map((metric) => {
-        const Icon = iconMap[metric.type] || Users;
+        const Icon =  iconMap[metric?.type] || Users;
 
         return (
           <div
@@ -65,12 +65,12 @@ const MetricCards = () => {
               <p className="text-xs font-medium text-[#60708A]">
                 {metric.label}
               </p>
-
+              {metric?.type && 
               <Icon
                 size={16}
                 strokeWidth={1.8}
-                className={metric.iconClassName}
-              />
+                className={metric?.iconClassName}
+              />}
             </div>
 
             <p className="mt-2 text-2xl font-semibold leading-none text-[#102746]">
