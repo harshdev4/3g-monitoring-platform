@@ -3,7 +3,6 @@ import Header from "@/components/dashboard/Header";
 import UserWorkSpace from "@/components/dashboard/UserWorkSpace";
 import StudentsTable from "@/components/teacher/StudentsTable";
 import DashboardFilters from "@/components/teacher/DashboardFilters";
-import useFilterStudentsStore from "@/store/useFilterStudentsStore";
 import MetricCards from "@/components/teacher/MetricCards";
 
 const page = () => {
@@ -37,7 +36,6 @@ const page = () => {
       iconClassName: "text-[#10B981]",
     },
   ];
-  const students = useFilterStudentsStore((state) => students);
   return (
     <div>
       <Header></Header>
