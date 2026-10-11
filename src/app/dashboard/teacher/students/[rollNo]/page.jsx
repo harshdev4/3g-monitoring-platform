@@ -13,12 +13,14 @@ import AssignedActions from "./fragments/AssignedActions";
 import EvidenceSubmissions from "./fragments/EvidenceSubmissions";
 import AttendanceSummary from "./fragments/AttendanceSummary";
 import TeacherObservations from "./fragments/TeacherObservations";
+import useFilterStudentsStore from "@/store/useFilterStudentsStore";
 // Temporary mock data
 const history = [
   { checkpoint: "Baseline · 12 Aug", category: "Gradual", marks: 34 },
   { checkpoint: "MSE-I · 10 Sep", category: "Gradual", marks: 38 },
   { checkpoint: "MSE-II · 04 Oct", category: "Gradual", marks: 32 },
 ];
+
 const metrics = [
   {
     label: "DBMS",
@@ -41,125 +43,12 @@ const metrics = [
     description: "1 approved · 1 under review · 1 rejected",
   },
 ];
-const students = [
-  {
-    rollNo: "1027",
-    name: "Arman Kumar",
-    department: "Department of Computer Applications",
-    className: "MCA-1A",
-    semester: "I",
-    previousAssessment: "MSE-I",
-    attendance: 65,
-    subject: "DBMS",
-    marks: "33",
-    exam: "MSE-II",
-    trend: "-5",
-    assessment: "Gradual",
-    email: "arman@example.com",
-    faculty: "Himanshu",
-
-    actions: [
-      {
-        id: 1,
-        title: "Mini-Q practice sheet",
-        status: "Under Review",
-        subject: "DBMS",
-        category: "Gradual",
-        dueDate: "10 Oct",
-        description: "Answer sheet required",
-      },
-      {
-        id: 2,
-        title: "Attend remedial DBMS classes",
-        status: "In Progress",
-        subject: "DBMS",
-        dueDate: "12 Oct",
-        description: "Attendance / completion proof",
-      },
-      {
-        id: 3,
-        title: "Complete DBMS assignments",
-        status: "Approved",
-        subject: "DBMS",
-        dueDate: "15 Oct",
-        description: "Assignment completion required",
-      },
-      {
-        id: 4,
-        title: "Revise database concepts",
-        status: "In Progress",
-        subject: "DBMS",
-        dueDate: "18 Oct",
-        description: "Revision progress required",
-      },
-    ],
-    submissions: [
-      {
-        id: 1,
-        title: "dbms_practice_aman_v2.pdf",
-        status: "Under Review",
-        date: "04 Oct",
-        description: "Answer sheet",
-        version: "Version 2 · 1.8 MB",
-      },
-      {
-        id: 2,
-        title: "Seminar participation proof",
-        status: "Approved",
-        date: "29 Sep",
-        description: "Participation proof",
-        version: "Verified by Prof. Harsh Sharma",
-      },
-      {
-        id: 3,
-        title: "DBMS assignment submission",
-        status: "Under Review",
-        date: "27 Sep",
-        description: "Assignment document",
-        version: "Version 1 · 1.2 MB",
-      },
-    ],
-   
-  },
-  {
-    rollNo: "1029",
-    name: "Rahul Sharma",
-    department: "Department of Computer Applications",
-    className: "MCA-1A",
-    semester: "I",
-    attendance: 78,
-    previousAssessment: "MSE-I",
-    exam: "MSE-II",
-    trend: "5",
-    subject: "DBMS",
-    marks: "73",
-    assessment: "Growing",
-    email: "rahul@example.com",
-    faculty: "Himanshu",
-  },
-  {
-    rollNo: "1031",
-    name: "Priya Singh",
-    department: "Department of Computer Applications",
-    className: "MCA-1A",
-    semester: "I",
-    attendance: 92,
-    previousAssessment: "MSE-I",
-    exam: "MSE-II",
-    trend: "8",
-    subject: "DBMS",
-    marks: "93",
-    assessment: "Gallant",
-    email: "priya@example.com",
-    faculty: "Himanshu",
-  },
-];
 
 export default function StudentDetailsPage() {
   const { rollNo } = useParams();
   const router = useRouter();
-
-  const student = students.find((item) => item.rollNo === String(rollNo));
+  const students = useFilterStudentsStore((state) => state.students);
+  const student = students.find((item) => item.university_roll_no == String(rollNo));
 
   if (!student) {
     return (
@@ -212,9 +101,7 @@ export default function StudentDetailsPage() {
             subject={student.subject}
             marks={student.marks}
             exam={student.exam}
-            trend={student.trend}
             attendance={student.attendance}
-            previousAssessment={student.previousAssessment}
           />
         </div>
         <div className="mt-4">
