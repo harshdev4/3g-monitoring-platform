@@ -11,6 +11,7 @@ import {
 
 import useTeacherStore from "@/store/useTeacherStore";
 import useFilterStudentsStore from "@/store/useFilterStudentsStore";
+import Link from "next/link";
 
 const PAGE_SIZE = 10;
 
@@ -49,10 +50,9 @@ function formatNumber(value) {
 function CategoryBadge({ category }) {
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded-md px-2 py-1 text-[12px] font-medium ${
-        CATEGORY_STYLES[category] ??
+      className={`inline-flex items-center whitespace-nowrap rounded-md px-2 py-1 text-[12px] font-medium ${CATEGORY_STYLES[category] ??
         "bg-slate-100 text-slate-600"
-      }`}
+        }`}
     >
       {category ?? "Unclassified"}
     </span>
@@ -86,9 +86,8 @@ function AssessmentBadge({ student }) {
   return (
     <div className="flex flex-col items-start gap-0.5">
       <span
-        className={`whitespace-nowrap text-[12px] font-medium ${
-          isLow ? "text-rose-700" : "text-slate-700"
-        }`}
+        className={`whitespace-nowrap text-[12px] font-medium ${isLow ? "text-rose-700" : "text-slate-700"
+          }`}
       >
         {formatNumber(obtained)} / {formatNumber(maximum)}
       </span>
@@ -121,11 +120,10 @@ function AttendanceValue({ value }) {
 
   return (
     <span
-      className={`text-[12px] ${
-        attendance < 75
-          ? "font-semibold text-rose-700"
-          : "text-slate-600"
-      }`}
+      className={`text-[12px] ${attendance < 75
+        ? "font-semibold text-rose-700"
+        : "text-slate-600"
+        }`}
     >
       {formatNumber(attendance)}%
     </span>
@@ -138,9 +136,8 @@ function SkeletonRows() {
       {Array.from({ length: 6 }, (_, columnIndex) => (
         <td key={columnIndex} className="px-3 py-3">
           <div
-            className={`h-3 rounded bg-slate-100 ${
-              columnIndex === 0 ? "w-28" : "w-16"
-            }`}
+            className={`h-3 rounded bg-slate-100 ${columnIndex === 0 ? "w-28" : "w-16"
+              }`}
           />
         </td>
       ))}
@@ -235,9 +232,9 @@ export default function StudentsTable({ title, subtitle }) {
 
   const hasRequiredFilters = Boolean(
     filters.semester &&
-      filters.className &&
-      filters.courses &&
-      filters.assessment
+    filters.className &&
+    filters.courses &&
+    filters.assessment
   );
 
   // Reset pagination when dashboard filters change.
@@ -337,15 +334,13 @@ export default function StudentsTable({ title, subtitle }) {
     categoryFilter === "all"
       ? students
       : students.filter(
-          (student) =>
-            student.three_g_category === categoryFilter
-        );
+        (student) =>
+          student.three_g_category === categoryFilter
+      );
 
-  // Calculate pagination entirely on the client.
   const total = filteredStudents.length;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  // Keep the current page valid if the result count changes.
   const safePage = Math.min(
     currentPage,
     Math.max(totalPages, 1)
@@ -465,12 +460,13 @@ export default function StudentsTable({ title, subtitle }) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] table-fixed">
               <colgroup>
-                <col className="w-[23%]" />
-                <col className="w-[18%]" />
+                <col className="w-[21%]" />
+                <col className="w-[19%]" />
+                <col className="w-[10%]" />
                 <col className="w-[12%]" />
                 <col className="w-[13%]" />
-                <col className="w-[18%]" />
-                <col className="w-[16%]" />
+                <col className="w-[12%]" />
+                <col className="w-[13%]" />
               </colgroup>
 
               <thead className="bg-slate-50">
@@ -482,6 +478,7 @@ export default function StudentsTable({ title, subtitle }) {
                     "Attendance",
                     "Assessment",
                     "3G category",
+                    "Action",
                   ].map((heading) => (
                     <th
                       key={heading}
@@ -521,11 +518,10 @@ export default function StudentsTable({ title, subtitle }) {
                   paginatedStudents.map((student) => (
                     <tr
                       key={student.university_roll_no}
-                      className={`h-[48px] transition-colors hover:bg-slate-50 ${
-                        student.three_g_category === "Gradual"
-                          ? "bg-rose-50/30"
-                          : ""
-                      }`}
+                      className={`h-[48px] transition-colors hover:bg-slate-50 ${student.three_g_category === "Gradual"
+                        ? "bg-rose-50/30"
+                        : ""
+                        }`}
                     >
                       <td className="truncate px-3 py-2 text-[12px] font-medium text-[#263B59]">
                         {student.name || "—"}
@@ -555,6 +551,14 @@ export default function StudentsTable({ title, subtitle }) {
                         <CategoryBadge
                           category={student.three_g_category}
                         />
+                      </td>
+                      <td className="px-3 py-2">
+                        <Link
+                          href={`/dashboard/teacher/students/${student.university_roll_no}`}
+                          className="text-[11px] font-medium text-[#1670FF] hover:underline"
+                        >
+                          View Student
+                        </Link>
                       </td>
                     </tr>
                   ))
