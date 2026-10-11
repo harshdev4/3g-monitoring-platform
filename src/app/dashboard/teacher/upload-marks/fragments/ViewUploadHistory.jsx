@@ -21,7 +21,7 @@ const filterDataHistory = [
   return (
     <>
     <Header/>
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pb-12" sctyle={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pb-12" >
       <main className="mx-auto max-w-[1400px] p-5 md:p-5 space-y-6">
         
         {/* HEADER AREA */}
