@@ -3,8 +3,33 @@
 import { Doughnut } from "react-chartjs-2";
 import { useMemo } from "react";
 import Chart from "chart.js/auto";
+import useFilterStudentsStore from "@/store/useFilterStudentsStore";
 
-const DistributionCard = ({ total, subtitle, data, note }) => {
+const DistributionCard = ({subtitle, note }) => {
+  const students = useFilterStudentsStore((state) => state.students);
+
+  const total = students.length;
+
+  const data = [
+    {
+      label: "Gradual",
+      value: students.filter((student) => student.three_g_category == "Gradual").length,
+      percentage: (students.filter((student) => student.three_g_category == "Gradual").length/students.length * 100).toFixed(0),
+      color: "#EF4444",
+    },
+    {
+      label: "Growing",
+      value: students.filter((student) => student.three_g_category == "Growing").length,
+      percentage: (students.filter((student) => student.three_g_category == "Growing").length/students.length * 100).toFixed(0),
+      color: "#F59E0B",
+    },
+    {
+      label: "Gallant",
+      value: students.filter((student) => student.three_g_category == "Gallant").length,
+      percentage: (students.filter((student) => student.three_g_category == "Gallant").length/students.length * 100).toFixed(0),
+      color: "#10B981",
+    },
+  ];
   const chartData = useMemo(() => {
     return {
       labels: data.map((item) => item.label),

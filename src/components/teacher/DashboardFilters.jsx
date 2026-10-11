@@ -13,24 +13,15 @@ const assessments = [
   { value: "ese", label: "ESE" },
 ];
 
-const DashboardFilters = ({ assignedCourses = [] }) => {
+const DashboardFilters = () => {
   const program = useTeacherStore((state) => state.program);
 
   const storedCourses = useTeacherStore(
     (state) => state.assignedCourses
   );
 
-  const setAssignedCourses = useTeacherStore(
-    (state) => state.setAssignedCourses
-  );
-
   const filters = useTeacherStore((state) => state.filters);
   const setFilters = useTeacherStore((state) => state.setFilters);
-
-  useEffect(() => {
-    if (assignedCourses.length > 0)
-      setAssignedCourses(assignedCourses);
-  }, [assignedCourses, setAssignedCourses]);
 
   useEffect(() => {
     if (program && filters.program !== program) {
@@ -81,7 +72,7 @@ const DashboardFilters = ({ assignedCourses = [] }) => {
           course.className === filters.className
       )
       .map((course) => ({ value: course.course_code, label: course.course })));
-  
+
 
   const updateFilter = (key, value) => {
     if (key === "program") {
@@ -114,6 +105,35 @@ const DashboardFilters = ({ assignedCourses = [] }) => {
     { key: "courses", label: "Courses", options: courses },
     { key: "assessment", label: "Assessment", options: assessments },
   ];
+
+  useEffect(() => {
+    if (program && filters.program !== program) {
+      return;
+    }
+
+    fields.forEach((filter) => {
+      const currentValue = filters[filter.key] ?? "";
+
+      const hasCurrentValue = filter.options.some(
+        (option) =>
+          String(option.value) === String(currentValue)
+      );
+
+      if (filter.options.length > 0 && !hasCurrentValue) {
+        setFilters({
+          [filter.key]: filter.options[0].value,
+        });
+      } else if (
+        filter.options.length === 0 &&
+        currentValue !== ""
+      ) {
+        setFilters({
+          [filter.key]: "",
+        });
+      }
+    });
+
+  }, [program, filters, fields, setFilters]);
 
 
   return (

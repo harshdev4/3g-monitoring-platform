@@ -3,8 +3,6 @@ import { useEffect } from "react";
 import useTeacherStore from "@/store/useTeacherStore";
 
 export default function TeacherStoreInitializer({ teacher }) {
-    console.log(teacher);
-    
     const setTeacher = useTeacherStore((state) => state.setTeacher);
     
     useEffect(() => {

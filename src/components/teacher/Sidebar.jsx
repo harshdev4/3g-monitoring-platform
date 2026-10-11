@@ -115,7 +115,7 @@ const Sidebar = () => {
               const active = isActive(navItem.href);
 
               return (
-                <li className="pb-[2px]" key={navItem.href}>
+                <li className="pb-0.5" key={navItem.href}>
                   <Link
                     href={navItem.href}
                     title={navItem.label}

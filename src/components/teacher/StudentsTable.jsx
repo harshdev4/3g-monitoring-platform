@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 
 import useTeacherStore from "@/store/useTeacherStore";
+import useFilterStudentsStore from "@/store/useFilterStudentsStore";
 
 const PAGE_SIZE = 10;
 
@@ -65,13 +65,19 @@ function AssessmentBadge({ student }) {
 
   const valid =
     student.obtained_mark != null &&
+    student.obtained_mark !== "" &&
     student.max_mark != null &&
+    student.max_mark !== "" &&
     Number.isFinite(obtained) &&
     Number.isFinite(maximum) &&
     maximum > 0;
 
   if (!valid) {
-    return <span className="text-[12px] text-slate-400">—</span>;
+    return (
+      <span className="text-[12px] text-slate-400">
+        —
+      </span>
+    );
   }
 
   const percentage = (obtained / maximum) * 100;
@@ -86,6 +92,7 @@ function AssessmentBadge({ student }) {
       >
         {formatNumber(obtained)} / {formatNumber(maximum)}
       </span>
+
       <span className="text-[12px] text-slate-400">
         {formatNumber(percentage)}%
       </span>
@@ -95,13 +102,21 @@ function AssessmentBadge({ student }) {
 
 function AttendanceValue({ value }) {
   if (value == null || value === "") {
-    return <span className="text-[12px] text-slate-400">—</span>;
+    return (
+      <span className="text-[12px] text-slate-400">
+        —
+      </span>
+    );
   }
 
   const attendance = Number(value);
 
   if (!Number.isFinite(attendance)) {
-    return <span className="text-[12px] text-slate-400">—</span>;
+    return (
+      <span className="text-[12px] text-slate-400">
+        —
+      </span>
+    );
   }
 
   return (
@@ -136,14 +151,15 @@ function SkeletonRows() {
 function Pagination({ pagination, loading, onPageChange }) {
   const {
     page,
+    pageSize,
     total,
     totalPages,
     hasPreviousPage,
     hasNextPage,
   } = pagination;
 
-  const first = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const last = Math.min(page * PAGE_SIZE, total);
+  const first = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const last = Math.min(page * pageSize, total);
 
   return (
     <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -153,7 +169,9 @@ function Pagination({ pagination, loading, onPageChange }) {
           {first}–{last}
         </span>{" "}
         of{" "}
-        <span className="font-medium text-slate-700">{total}</span>{" "}
+        <span className="font-medium text-slate-700">
+          {total}
+        </span>{" "}
         students
       </p>
 
@@ -186,15 +204,33 @@ function Pagination({ pagination, loading, onPageChange }) {
   );
 }
 
-export default function StudentsTable({ subtitle }) {
+export default function StudentsTable({ title, subtitle }) {
   const filters = useTeacherStore((state) => state.filters);
+
+  const students = useFilterStudentsStore(
+    (state) => state.students
+  );
+  const setStudents = useFilterStudentsStore(
+    (state) => state.setStudents
+  );
+  const loading = useFilterStudentsStore(
+    (state) => state.loading
+  );
+  const setLoading = useFilterStudentsStore(
+    (state) => state.setLoading
+  );
+  const error = useFilterStudentsStore(
+    (state) => state.error
+  );
+  const setError = useFilterStudentsStore(
+    (state) => state.setError
+  );
+  const clearStudents = useFilterStudentsStore(
+    (state) => state.clearStudents
+  );
 
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [students, setStudents] = useState([]);
-  const [pagination, setPagination] = useState(EMPTY_PAGINATION);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
 
   const hasRequiredFilters = Boolean(
@@ -204,6 +240,7 @@ export default function StudentsTable({ subtitle }) {
       filters.assessment
   );
 
+  // Reset pagination when dashboard filters change.
   useEffect(() => {
     setCurrentPage(1);
   }, [
@@ -215,10 +252,11 @@ export default function StudentsTable({ subtitle }) {
     categoryFilter,
   ]);
 
+  // Fetch all matching students once for the selected filters.
   const fetchStudents = useCallback(
     async (signal) => {
       setLoading(true);
-      setError("");
+      setError(null);
 
       try {
         const response = await fetch("/api/teachers/students", {
@@ -231,9 +269,6 @@ export default function StudentsTable({ subtitle }) {
               ...filters,
               subject: filters.courses,
             },
-            category: categoryFilter,
-            page: currentPage,
-            pageSize: PAGE_SIZE,
           }),
           signal,
         });
@@ -244,13 +279,17 @@ export default function StudentsTable({ subtitle }) {
 
         const result = await response.json();
 
-        setStudents(result.students ?? []);
-        setPagination(result.pagination ?? EMPTY_PAGINATION);
+        if (!Array.isArray(result.students)) {
+          throw new Error("Invalid student response.");
+        }
+
+        setStudents(result.students);
       } catch (err) {
         if (err.name !== "AbortError") {
-          setError("Unable to load student records. Please try again.");
-          setStudents([]);
-          setPagination(EMPTY_PAGINATION);
+          clearStudents();
+          setError(
+            "Unable to load student records. Please try again."
+          );
         }
       } finally {
         if (!signal.aborted) {
@@ -264,18 +303,18 @@ export default function StudentsTable({ subtitle }) {
       filters.className,
       filters.courses,
       filters.assessment,
-      categoryFilter,
-      currentPage,
-      retryCount,
+      setStudents,
+      setLoading,
+      setError,
+      clearStudents,
     ]
   );
 
   useEffect(() => {
     if (!hasRequiredFilters) {
-      setStudents([]);
-      setPagination(EMPTY_PAGINATION);
-      setError("");
+      clearStudents();
       setLoading(false);
+      setError(null);
       return;
     }
 
@@ -284,14 +323,50 @@ export default function StudentsTable({ subtitle }) {
     fetchStudents(controller.signal);
 
     return () => controller.abort();
-  }, [hasRequiredFilters, fetchStudents]);
+  }, [
+    hasRequiredFilters,
+    fetchStudents,
+    clearStudents,
+    setLoading,
+    setError,
+    retryCount,
+  ]);
+
+  // Filter the stored records without making another API request.
+  const filteredStudents =
+    categoryFilter === "all"
+      ? students
+      : students.filter(
+          (student) =>
+            student.three_g_category === categoryFilter
+        );
+
+  // Calculate pagination entirely on the client.
+  const total = filteredStudents.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  // Keep the current page valid if the result count changes.
+  const safePage = Math.min(
+    currentPage,
+    Math.max(totalPages, 1)
+  );
+
+  const paginatedStudents = filteredStudents.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
+
+  const pagination = {
+    ...EMPTY_PAGINATION,
+    page: safePage,
+    total,
+    totalPages,
+    hasPreviousPage: safePage > 1,
+    hasNextPage: safePage < totalPages,
+  };
 
   function goToPage(page) {
-    if (
-      loading ||
-      page < 1 ||
-      page > pagination.totalPages
-    ) {
+    if (loading || page < 1 || page > totalPages) {
       return;
     }
 
@@ -304,11 +379,12 @@ export default function StudentsTable({ subtitle }) {
       <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-base font-semibold text-[#102746]">
-            My Students
+            {title}
           </h2>
 
           <p className="mt-1 text-xs text-slate-500">
-            {subtitle || "Student attendance and assessment performance"}
+            {subtitle ||
+              "Student attendance and assessment performance"}
           </p>
         </div>
 
@@ -318,7 +394,7 @@ export default function StudentsTable({ subtitle }) {
             <span>
               Total:{" "}
               <span className="font-semibold text-slate-700">
-                {pagination.total}
+                {students.length}
               </span>
             </span>
           </div>
@@ -326,14 +402,19 @@ export default function StudentsTable({ subtitle }) {
           <div className="flex items-center gap-2">
             <Filter size={14} className="text-slate-400" />
 
-            <label htmlFor="student-category-filter" className="sr-only">
+            <label
+              htmlFor="student-category-filter"
+              className="sr-only"
+            >
               Filter by 3G category
             </label>
 
             <select
               id="student-category-filter"
               value={categoryFilter}
-              onChange={(event) => setCategoryFilter(event.target.value)}
+              onChange={(event) =>
+                setCategoryFilter(event.target.value)
+              }
               className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-blue-400"
             >
               {CATEGORY_OPTIONS.map((option) => (
@@ -352,8 +433,10 @@ export default function StudentsTable({ subtitle }) {
             <p className="text-sm font-medium text-slate-700">
               Select dashboard filters
             </p>
+
             <p className="mt-1 text-xs text-slate-500">
-              Choose a semester, class, course, and assessment to view students.
+              Choose a semester, class, course, and assessment to view
+              students.
             </p>
           </div>
         </div>
@@ -365,9 +448,12 @@ export default function StudentsTable({ subtitle }) {
               className="flex items-center justify-between gap-3 border-b border-rose-100 bg-rose-50 px-4 py-2"
             >
               <p className="text-xs text-rose-700">{error}</p>
+
               <button
                 type="button"
-                onClick={() => setRetryCount((count) => count + 1)}
+                onClick={() =>
+                  setRetryCount((count) => count + 1)
+                }
                 className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-rose-700 hover:text-rose-900"
               >
                 <RefreshCw size={12} />
@@ -419,19 +505,20 @@ export default function StudentsTable({ subtitle }) {
                       Unable to display student records.
                     </td>
                   </tr>
-                ) : students.length === 0 ? (
+                ) : paginatedStudents.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="h-48 text-center">
                       <p className="text-sm font-medium text-slate-700">
                         No students found
                       </p>
+
                       <p className="mt-1 text-xs text-slate-500">
                         Try changing the selected category or filters.
                       </p>
                     </td>
                   </tr>
                 ) : (
-                  students.map((student) => (
+                  paginatedStudents.map((student) => (
                     <tr
                       key={student.university_roll_no}
                       className={`h-[48px] transition-colors hover:bg-slate-50 ${
@@ -455,7 +542,9 @@ export default function StudentsTable({ subtitle }) {
                       </td>
 
                       <td className="px-3 py-2">
-                        <AttendanceValue value={student.attendance_pct} />
+                        <AttendanceValue
+                          value={student.attendance_pct}
+                        />
                       </td>
 
                       <td className="px-3 py-2">
@@ -482,9 +571,11 @@ export default function StudentsTable({ subtitle }) {
         </>
       )}
 
-      {/* Minimal category legend */}
+      {/* Category legend */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 bg-slate-50/50 px-4 py-2">
-        <span className="text-[10px] text-slate-400">Categories</span>
+        <span className="text-[10px] text-slate-400">
+          Categories
+        </span>
 
         {[
           ["Gallant", "bg-emerald-500"],

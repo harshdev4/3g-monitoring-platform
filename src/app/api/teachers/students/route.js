@@ -6,12 +6,7 @@ export async function POST(request) {
     try {
         const body = await request.json();
 
-        const {
-            filters,
-            category = "all",
-            page = 1,
-            pageSize = 10,
-        } = body;
+        const { filters } = body;
 
         if (!filters || typeof filters !== "object") {
             return NextResponse.json(
@@ -20,14 +15,9 @@ export async function POST(request) {
             );
         }
 
-        const result = await getDashboardStudents(
-            filters,
-            page,
-            pageSize,
-            category
-        );
+        const students = await getDashboardStudents(filters);
 
-        return NextResponse.json(result);
+        return NextResponse.json({ students });
     } catch (error) {
         console.error("Students API error:", error);
 

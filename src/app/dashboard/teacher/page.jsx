@@ -16,63 +16,10 @@ import TeacherStoreInitializer from "@/components/teacher/TeacherStoreInitialize
 const page = async () => {
 
   const teacher = await getUser("annu.yadav@kiet.edu");
-  const assignedCourses = await getAssignedCourses(teacher.empId);
   
   if(!teacher){
     return <p>User not found.</p>
   }
-
-  const metrics = [
-    {
-      type: "students",
-      label: "Total students",
-      value: 120,
-      description: "MCA-1A, MSE-1",
-      iconClassName: "text-[#2563EB]",
-    },
-    {
-      type: "risk",
-      label: "At-risk",
-      value: 30,
-      description: "25% need support",
-      iconClassName: "text-[#EF4444]",
-    },
-    {
-      type: "growing",
-      label: "Growing",
-      value: 54,
-      description: "45% showing progress",
-      iconClassName: "text-[#F59E0B]",
-    },
-    {
-      type: "stable",
-      label: "Stable",
-      value: 36,
-      description: "30% high performing",
-      iconClassName: "text-[#10B981]",
-    },
-  ];
-
-  const distributionData = [
-    {
-      label: "Gradual",
-      value: 30,
-      percentage: 25,
-      color: "#EF4444",
-    },
-    {
-      label: "Growing",
-      value: 54,
-      percentage: 45,
-      color: "#F59E0B",
-    },
-    {
-      label: "Galant",
-      value: 36,
-      percentage: 30,
-      color: "#10B981",
-    },
-  ];
 
   const progressionSeries = [
     {
@@ -120,45 +67,6 @@ const page = async () => {
     },
   ];
 
-  const students = [
-    {
-      id: 1,
-      name: "Arman Kumar",
-      rollNo: "1027",
-      className: "MCA-1A",
-      attendance: 65,
-      assessment: "Gradual",
-      statusClass: "bg-red-50 text-red-500",
-    },
-    {
-      id: 2,
-      name: "Rahul Sharma",
-      rollNo: "1029",
-      className: "MCA-1A",
-      attendance: 86,
-      assessment: "Growing",
-      statusClass: "bg-orange-50 text-orange-500",
-    },
-    {
-      id: 3,
-      name: "Neha Sharma",
-      rollNo: "1028",
-      className: "MCA-1A",
-      attendance: 94,
-      assessment: "Gallant",
-      statusClass: "bg-emerald-50 text-emerald-500",
-    },
-    {
-      id: 4,
-      name: "Karan Mehta",
-      rollNo: "1030",
-      className: "MCA-1A",
-      attendance: 68,
-      assessment: "Gradual",
-      statusClass: "bg-red-50 text-red-500",
-    },
-  ];
-
   const monitoringItems = [
     {
       value: 84,
@@ -191,6 +99,7 @@ const page = async () => {
       description: "Activity completed",
     },
   ];
+
   return ( 
     <div>
       <TeacherStoreInitializer teacher={teacher}/>
@@ -199,24 +108,23 @@ const page = async () => {
         <UserWorkSpace
           user={`${teacher.role == 'teacher' && 'Teacher' || teacher.role == 'student' && 'Student' || teacher.role == 'dean' || 'Dean'}`}
           name={teacher.name}
+          designation={teacher.designation}
           pageTitle="Dashboard"
           description={`${teacher.dept} · Academic Year 2026–27`}
           welcomeDescription="Track your students, support their progress and review today's priorities."
         />
 
-        <DashboardFilters  assignedCourses={assignedCourses} />
+        <DashboardFilters/>
         {/* Metrics */}
 
         <div className="mt-3">
-          <MetricCards metrics={metrics} />
+          <MetricCards/>
         </div>
 
         {/* Charts */}
         <div className="mt-3 grid gap-3 lg:grid-cols-2">
           <DistributionCard
-            total={120}
             subtitle="Current aggregate · MSE-1 & checkpoint"
-            data={distributionData}
             note=""
           />
 
@@ -229,7 +137,7 @@ const page = async () => {
         </div>
 
         {/* Attention + Actions */}
-        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        {/* <div className="mt-3 grid gap-3 lg:grid-cols-2">
           <AttentionCard
             subtitle="Students needing support"
             students={attentionStudents}
@@ -240,11 +148,11 @@ const page = async () => {
             evidenceCount={8}
             evidenceText="Answer sheets, projects and completion proofs"
           />
-        </div>
+        </div> */}
 
         {/* Students */}
         <div className="mt-3">
-          <StudentsTable students={students}/>
+          <StudentsTable title={"My Students"}/>
         </div>
 
         {/* Bottom cards */}

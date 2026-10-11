@@ -4,6 +4,7 @@ import { Info } from "lucide-react";
 const UserWorkSpace = ({
   user,
   name,
+  designation,
   pageTitle = "Dashboard",
   description,
   welcomeMessage,
@@ -54,7 +55,7 @@ const UserWorkSpace = ({
 
           <div>
             <p className="text-[14px] font-medium leading-tight text-[#0755C9]">
-              {welcomeMessage ?? `Welcome back, ${name}`}
+              {welcomeMessage ?? `Welcome back, ${designation} ${name}`}
             </p>
 
             {welcomeDescription && (
