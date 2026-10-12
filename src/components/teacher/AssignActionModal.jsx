@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 import { X } from "lucide-react";
 import Pill from "@/components/teacher/Pill";
 
@@ -37,7 +37,7 @@ const createInitialForm = (sections, subjects) => ({
 // Increased to 300ms to allow the custom cubic-bezier to feel smooth
 const ANIMATION_MS = 300;
 
-export default function AssignActionModal({
+export default memo(function AssignActionModal({
   isOpen,
   sections,
   subjects,
@@ -294,4 +294,4 @@ export default function AssignActionModal({
       </div>
     </div>
   );
-}
+})
