@@ -21,7 +21,7 @@ const filterDataHistory = [
   return (
     <>
     <Header/>
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pb-12" sctyle={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pb-12" >
       <main className="mx-auto max-w-[1400px] p-5 md:p-5 space-y-6">
         
         {/* HEADER AREA */}
@@ -97,13 +97,13 @@ const filterDataHistory = [
         {/* PAST IMPORTS TABLE */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-5 border-b border-slate-100">
-            <h2 className="text-[16px] font-bold text-slate-800">Past imports</h2>
-            <p className="text-[12px] text-slate-500 mt-1">Newest first · All uploads by Prof. Harsh Sharma</p>
+            <h2 className="text-[17px] font-bold text-slate-800">Past imports</h2>
+            <p className="text-[11px] text-slate-500 mt-1">Newest first · All uploads by Prof. Harsh Sharma</p>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[13px] whitespace-nowrap">
-              <thead className="bg-slate-50 text-slate-500 text-[11px] font-semibold border-b border-slate-200 uppercase">
+              <thead className="bg-slate-50 text-slate-500 text-[10px] font-semibold border-b border-slate-200 uppercase">
                 <tr>
                   <th className="px-5 py-3">Import / file</th>
                   <th className="px-5 py-3">Date / uploader</th>
@@ -134,9 +134,9 @@ const filterDataHistory = [
                     <td className="px-5 py-4">{row.rows}</td>
                     <td className="px-5 py-4">{row.errors}</td>
                     <td className="px-5 py-4">
-                      {row.status === "Success" && <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1.5 w-max"><div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>Success</span>}
-                      {row.status === "Partial" && <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1.5 w-max"><div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>Partial</span>}
-                      {row.status === "Failed" && <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1.5 w-max"><div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>Failed</span>}
+                      {row.status === "Success" && <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1.5 w-max"><div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>Success</span>}
+                      {row.status === "Partial" && <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1.5 w-max"><div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>Partial</span>}
+                      {row.status === "Failed" && <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1.5 w-max"><div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>Failed</span>}
                     </td>
                     <td className="px-5 py-4">
                       <button className="text-blue-600 hover:text-blue-800 font-semibold transition text-[13px]">
@@ -163,7 +163,7 @@ const filterDataHistory = [
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
             <div>
-              <h2 className="text-[16px] font-bold text-slate-800 mb-4">Selected import · {historyData[0]?.id}</h2>
+              <h2 className="text-[17px] font-bold text-slate-800 mb-4">Selected import · {historyData[0]?.id}</h2>
               <div className="mb-4">
                 <h3 className="text-[13px] font-bold text-slate-800">{historyData[0]?.rows} records successfully published</h3>
                 <p className="text-[12px] text-slate-500 mt-1">{historyData[0]?.subject} · {historyData[0]?.assessment} · {historyData[0]?.class} · {historyData[0]?.date}, {historyData[0]?.time} IST</p>
@@ -179,7 +179,7 @@ const filterDataHistory = [
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-[16px] font-bold text-slate-800 mb-4">Validation audit</h2>
+            <h2 className="text-[17px] font-bold text-slate-800 mb-4">Validation audit</h2>
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start gap-3 mb-6">
               <Info className="text-blue-600 flex-shrink-0 mt-0.5" size={18} />
               <div>
