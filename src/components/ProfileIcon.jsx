@@ -10,7 +10,7 @@ const ProfileIcon = () => {
     const nameArr = name.split(" ");
     const shortName = nameArr.map(word => word.slice(0,1)).slice(0, 2);
     return (
-        <div className="flex gap-1 items-start relative cursor-pointer" title="Prof. Harsh Sharma">
+        <div className="flex gap-1 items-start relative cursor-pointer" title={name}>
             <div className="rounded-full bg-navy w-fit px-2 p-1.75 text-white font-inter text-[11px]">
                 <h4>{shortName}</h4>
             </div>
