@@ -10,6 +10,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import useTeacherStore from "@/store/useTeacherStore";
+import useFilterStudentsStore from "@/store/useFilterStudentsStore";
 
 ChartJS.register(
   CategoryScale,
@@ -17,15 +19,37 @@ ChartJS.register(
   PointElement,
   LineElement,
   Tooltip,
-  Legend
+  Legend,
 );
 
-const ProgressionCard = ({
-  subtitle,
-  labels,
-  series,
-  footer,
-}) => {
+const ProgressionCard = () => {
+
+  const progressionSeries = [
+    {
+      label: "Gradual",
+      color: "#EF4444",
+      data: [42, 50, 60, 70],
+    },
+    {
+      label: "Growing",
+      color: "#F59E0B",
+      data: [42, 57, 68, 82],
+    },
+    {
+      label: "Gallant",
+      color: "#10B981",
+      data: [42, 52, 64, 78],
+    },
+  ];
+
+  const filters = useTeacherStore((state) => state.filters);
+  const students = useFilterStudentsStore((state) => state.students);
+
+  const subtitle = `Sem- ${filters.semester} ${filters.className} · Average from assessment`
+  const labels = ["Pre-MSE", "MSE-1", "MSE-2", "ESE"]
+  const series = progressionSeries
+  const footer = `Cohort: ${students.length}· Growing up · Grade bands over assessment period`
+
   const chartData = {
     labels,
 
@@ -137,17 +161,12 @@ const ProgressionCard = ({
           3G Progression
         </h3>
 
-        <p className="mt-1 text-xs text-[#71809A]">
-          {subtitle}
-        </p>
+        <p className="mt-1 text-xs text-[#71809A]">{subtitle}</p>
       </div>
 
       {/* Dedicated responsive chart container */}
-      <div className="relative mt-4 h-[190px] w-full min-w-0">
-        <Line
-          data={chartData}
-          options={chartOptions}
-        />
+      <div className="relative mt-4 h-47.5 w-full min-w-0">
+        <Line data={chartData} options={chartOptions} />
       </div>
 
       {footer && (

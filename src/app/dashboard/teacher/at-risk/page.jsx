@@ -10,39 +10,10 @@ import StudentsTable from "@/components/teacher/StudentsTable";
 
 import AttentionContext from "./fragments/AttentionContext";
 import RecommendedFacultyFollowUp from "./fragments/RecommendedFacultyFollowUp";
+import AtRiskPageStudentTableSection from "@/components/teacher/AtRiskPageStudentTableSection";
+import AtRiskMetricSection from "@/components/teacher/AtRiskMetricSection";
 
 const Page = () => {
-  const metrics = [
-    {
-      type: "students",
-      label: "Gradual students",
-      value: 30,
-      description: "DBMS",
-      iconClassName: "text-[#2563EB]",
-    },
-    {
-      type: "marks",
-      label: "Low marks",
-      value: 24,
-      description: "Latest marks below 40%",
-      iconClassName: "text-[#EF4444]",
-    },
-    {
-      type: "attendance",
-      label: "Low attendance",
-      value: 18,
-      description: "Attendance below 75%",
-      iconClassName: "text-[#F59E0B]",
-    },
-    {
-      type: "performance",
-      label: "Declining performance",
-      value: 12,
-      description: "Drop of 5+ points since MSE-I",
-      iconClassName: "text-[#10B981]",
-    },
-  ];
-
   const [selectedStudent, setSelectedStudent] = useState();
 
   return (
@@ -65,11 +36,11 @@ const Page = () => {
         <DashboardFilters />
 
         <div className="mt-3">
-          <MetricCards metrics={metrics} />
+          <AtRiskMetricSection/>
         </div>
 
         <div className="mt-3">
-          <StudentsTable title={"Students requiring attention"} subtitle={"High severity first"}/>
+          <AtRiskPageStudentTableSection/>
         </div>
 
         <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">

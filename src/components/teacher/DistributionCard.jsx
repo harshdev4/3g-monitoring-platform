@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import Chart from "chart.js/auto";
 import useFilterStudentsStore from "@/store/useFilterStudentsStore";
 
-const DistributionCard = ({subtitle, note }) => {
+const DistributionCard = ({ subtitle, note }) => {
   const students = useFilterStudentsStore((state) => state.students);
 
   const total = students.length;
@@ -14,19 +14,19 @@ const DistributionCard = ({subtitle, note }) => {
     {
       label: "Gradual",
       value: students.filter((student) => student.three_g_category == "Gradual").length,
-      percentage: (students.filter((student) => student.three_g_category == "Gradual").length/students.length * 100).toFixed(0),
+      percentage: (students.filter((student) => student.three_g_category == "Gradual").length / students.length * 100).toFixed(0),
       color: "#EF4444",
     },
     {
       label: "Growing",
       value: students.filter((student) => student.three_g_category == "Growing").length,
-      percentage: (students.filter((student) => student.three_g_category == "Growing").length/students.length * 100).toFixed(0),
+      percentage: (students.filter((student) => student.three_g_category == "Growing").length / students.length * 100).toFixed(0),
       color: "#F59E0B",
     },
     {
       label: "Gallant",
       value: students.filter((student) => student.three_g_category == "Gallant").length,
-      percentage: (students.filter((student) => student.three_g_category == "Gallant").length/students.length * 100).toFixed(0),
+      percentage: (students.filter((student) => student.three_g_category == "Gallant").length / students.length * 100).toFixed(0),
       color: "#10B981",
     },
   ];
@@ -73,10 +73,10 @@ const DistributionCard = ({subtitle, note }) => {
       </div>
 
       <div className="mt-4 flex items-center gap-6">
-        <div className="relative h-[120px] w-[120px] shrink-0">
+        <div className="relative z-0 h-30 w-30 shrink-0">
           <Doughnut data={chartData} options={chartOptions} />
 
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <div className="pointer-events-none absolute -z-10 inset-0 flex flex-col items-center justify-center">
             <span className="text-xl font-semibold text-[#102746]">
               {total}
             </span>

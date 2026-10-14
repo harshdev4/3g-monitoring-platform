@@ -4,38 +4,10 @@ import UserWorkSpace from "@/components/dashboard/UserWorkSpace";
 import StudentsTable from "@/components/teacher/StudentsTable";
 import DashboardFilters from "@/components/teacher/DashboardFilters";
 import MetricCards from "@/components/teacher/MetricCards";
+import StudentMatricSection from "@/components/teacher/StudentMatricSection";
+import StudentPageStudentTableSection from "@/components/teacher/StudentPageTableSection";
 
 const page = () => {
-  const metrics = [
-    {
-      type: "students",
-      label: "Total students",
-      value: 120,
-      description: "MCA-1A, MSE-1",
-      iconClassName: "text-[#2563EB]",
-    },
-    {
-      type: "gradual",
-      label: "Gradual",
-      value: 30,
-      description: "25% need support",
-      iconClassName: "text-[#EF4444]",
-    },
-    {
-      type: "growing",
-      label: "Growing",
-      value: 54,
-      description: "45% showing progress",
-      iconClassName: "text-[#F59E0B]",
-    },
-    {
-      type: "gallent",
-      label: "Gallent",
-      value: 36,
-      description: "30% high performing",
-      iconClassName: "text-[#10B981]",
-    },
-  ];
   return (
     <div>
       <Header></Header>
@@ -51,10 +23,10 @@ const page = () => {
         />
         <DashboardFilters />
         <div className="mt-3">
-          <MetricCards metrics={metrics} />
+          <StudentMatricSection/>
         </div>
         <div className="mt-3">
-          <StudentsTable title={"My Students"} />
+          <StudentPageStudentTableSection />
         </div>
         <div className="mt-3"></div>
       </div>
