@@ -11,7 +11,7 @@ import ProgressionCard from "@/components/teacher/ProgressionCard";
 import QuickActionsCard from "@/components/teacher/QuickActionsCard";
 import RecentActivityCard from "@/components/teacher/RecentActivityCard";
 import StudentsTable from "@/components/teacher/StudentsTable";
-import TeacherStoreInitializer from "@/components/teacher/TeacherStoreInitializer";
+import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer";
 
 const page = async () => {
 
