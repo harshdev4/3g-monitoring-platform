@@ -1,5 +1,3 @@
-import useFilterStudentsStore from "@/store/useFilterStudentsStore";
-import useTeacherStore from "@/store/useTeacherStore";
 import {
   Users,
   UserRoundX,
@@ -14,7 +12,7 @@ const iconMap = {
   stable: ShieldCheck,
 };
 
-const MetricCards = ({metrics}) => {
+const MetricCards = ({metrics=[]}) => {
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
