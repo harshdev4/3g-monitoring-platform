@@ -5,15 +5,12 @@ import DashboardFilters from "@/components/teacher/DashboardFilters";
 import MetricCards from "@/components/teacher/MetricCards";
 import DistributionCard from "@/components/teacher/DistributionCard";
 import ProgressionCard from '@/components/teacher/ProgressionCard';
-import getUser from "@/app/api/users/getUser";
-import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer";
+import PerformanceStudentsInitializer from
+  "@/components/mapper/PerformanceStudentsInitializer";
+  import PerformanceMatricSection from '@/components/teacher/PerformanceMatricSection'
 
-const page = async () => {
-  const teacher = await getUser("annu.yadav@kiet.edu");
+const page =  () => {
   
-  if(!teacher){
-    return <p>User not found.</p>
-  }
   const progressionSeries = [
     {
       label: "Gradual",
@@ -33,7 +30,7 @@ const page = async () => {
   ];
   return (
     <div>
-      <TeacherStoreInitializer teacher={teacher}/>
+      {/* <TeacherStoreInitializer teacher={teacher}/> */}
       <Header />
       <div className="p-5">
         <UserWorkSpace
@@ -45,8 +42,9 @@ const page = async () => {
           showWelcome={false}
         />
         <DashboardFilters />
+        <PerformanceStudentsInitializer />
         <div className="mt-3">
-          <MetricCards />
+          <PerformanceMatricSection />
         </div>
         <div className="mt-3 grid gap-3 lg:grid-cols-2">
           <DistributionCard
