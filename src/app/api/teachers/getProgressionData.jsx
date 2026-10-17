@@ -30,11 +30,10 @@ const getProgressionData = async (filter) => {
         a.obtained_mark,
         a.max_mark,
 
-        ROW_NUMBER() OVER (
+        Dense_Rank() OVER (
           PARTITION BY a.type, a.course_id
           ORDER BY
-            a.obtained_mark DESC NULLS LAST,
-            a.student_id ASC
+            a.obtained_mark DESC NULLS LAST
         ) AS marks_rank
 
       FROM public.assessments a
@@ -55,8 +54,8 @@ const getProgressionData = async (filter) => {
         student_id,
 
         CASE
-          WHEN marks_rank <= 5 THEN 'Gallant'
-          WHEN obtained_mark / NULLIF(max_mark, 0) < 0.40
+          WHEN marks_rank <= 10 THEN 'Gallant'
+          WHEN obtained_mark::numeric / NULLIF(max_mark, 0) < 0.40
             THEN 'Gradual'
           ELSE 'Growing'
         END AS three_g_category
@@ -99,6 +98,9 @@ const getProgressionData = async (filter) => {
       ON ac.type = assessment_types.type
       AND ac.three_g_category = categories.three_g_category
 
+    WHERE $1 <> 1
+    OR assessment_types.type <> 'pre-mse'
+    
     ORDER BY
       assessment_types.sort_order,
       CASE categories.three_g_category

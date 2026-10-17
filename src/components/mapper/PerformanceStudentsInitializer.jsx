@@ -49,7 +49,7 @@ export default function PerformanceStudentsInitializer() {
 
         setStudents(students);
       } catch (error) {
-        if (!axios.isCancel(err)) {
+        if (!axios.isCancel(error)) {
           clearStudents();
           setError("Unable to load student records.");
         }

@@ -50,7 +50,7 @@ const StudentPageStudentTableSection = () => {
                 if (!Array.isArray(students)) {
                     throw new Error("Invalid student response.");
                 }
-
+                
                 setStudents(students);
 
             } catch (err) {

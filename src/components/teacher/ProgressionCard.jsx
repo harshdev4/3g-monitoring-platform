@@ -130,7 +130,8 @@ const ProgressionCard = () => {
     setError,
     retryCount,
   ]);
-  const assessmentTypes = ["pre-mse", "mse-1", "mse-2", "ese"];
+
+  const assessmentTypes = [(filters.semester != 1 && "pre-mse"), "mse-1", "mse-2", "ese"].filter(Boolean);
 
   const getProgressionData = (category) =>
     assessmentTypes.map(
@@ -161,7 +162,7 @@ const ProgressionCard = () => {
   ];
 
   const subtitle = `Sem- ${filters.semester} ${filters.className} · Average from assessment`;
-  const labels = ["Pre-MSE", "MSE-1", "MSE-2", "ESE"];
+  const labels = [(filters.semester != 1 && "PRE-MSE"), "MSE-1", "MSE-2", "ESE"].filter(Boolean);
   const footer = `Cohort: ${students.length} · Grade bands over assessment period`;
 
   const chartData = {
