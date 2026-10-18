@@ -385,9 +385,9 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
                 <col className="w-[19%]" />
                 <col className="w-[10%]" />
                 <col className="w-[12%]" />
+                <col className="w-[10%]" />
                 <col className="w-[13%]" />
-                <col className="w-[12%]" />
-                <col className="w-[13%]" />
+                <col className="w-[15%]" />
               </colgroup>
 
               <thead className="bg-slate-50">
@@ -397,7 +397,7 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
                     "Roll no.",
                     "Class",
                     "Attendance",
-                    "Assessment",
+                    "Marks",
                     "3G category",
                     "Action",
                   ].map((heading) => (

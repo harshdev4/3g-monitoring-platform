@@ -19,30 +19,47 @@ const getDashboardStudents = async (filter) => {
         a.attendance_pct,
         a.max_mark,
         a.obtained_mark,
-        ROW_NUMBER() OVER (
-          ORDER BY
-            a.obtained_mark DESC NULLS LAST,
-            s.university_roll_no ASC
-        ) AS marks_rank
+
+        CASE
+          WHEN a.student_id IS NULL THEN NULL
+          ELSE DENSE_RANK() OVER (
+            ORDER BY a.obtained_mark DESC NULLS LAST
+          )
+        END AS marks_rank
+
       FROM public.students s
+
       JOIN public.users u
         ON s.user_id = u.unique_id
-      JOIN public.assessments a
+
+      LEFT JOIN public.assessments a
         ON s.university_roll_no = a.student_id
-      WHERE s.semester = $1
-        AND s.section = $2
+        AND a.semester = $1
         AND a.course_id = $3
         AND a.type = $4
+
+      WHERE s.semester = $1
+        AND s.section = $2
     )
+
     SELECT
-      *,
+      name,
+      university_roll_no,
+      semester,
+      section,
+      attendance_pct,
+      obtained_mark,
       CASE
-        WHEN marks_rank <= 5 THEN 'Gallant'
-        WHEN obtained_mark / NULLIF(max_mark, 0) < 0.40
+        WHEN marks_rank IS NULL THEN NULL
+        WHEN marks_rank <= 10 THEN 'Gallant'
+        WHEN obtained_mark::numeric
+             / NULLIF(max_mark, 0) < 0.40
           THEN 'Gradual'
         ELSE 'Growing'
       END AS three_g_category
+
     FROM ranked_students
+
     ORDER BY university_roll_no ASC;
   `;
 

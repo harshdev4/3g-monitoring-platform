@@ -9,6 +9,9 @@ const pool = globalForPg.pgPool || new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 5,
 });
 
 if (process.env.NODE_ENV !== "production") {

@@ -131,38 +131,38 @@ const ProgressionCard = () => {
     retryCount,
   ]);
 
- const progressionSeries = [
-  {
-    label: "Gradual",
-    color: "#EF4444",
-    data:
-      Number(filters.semester) === 1
-        ? [50, 60, 70]
-        : [42, 50, 60, 70],
-  },
-  {
-    label: "Growing",
-    color: "#F59E0B",
-    data:
-      Number(filters.semester) === 1
-        ? [57, 68, 82]
-        : [42, 57, 68, 82],
-  },
-  {
-    label: "Gallant",
-    color: "#10B981",
-    data:
-      Number(filters.semester) === 1
-        ? [52, 64, 78]
-        : [42, 52, 64, 78],
-  },
-];
+  const assessmentTypes = [(filters.semester != 1 && "pre-mse"), "mse-1", "mse-2", "ese"].filter(Boolean);
+
+  const getProgressionData = (category) =>
+    assessmentTypes.map(
+      (type) =>
+        studentsWithAssessments.find(
+          (student) =>
+            student.type === type &&
+            student.three_g_category === category
+        )?.student_count ?? 0
+    );
+
+  const progressionSeries = [
+    {
+      label: "Gradual",
+      color: "#EF4444",
+      data: getProgressionData("Gradual"),
+    },
+    {
+      label: "Growing",
+      color: "#F59E0B",
+      data: getProgressionData("Growing"),
+    },
+    {
+      label: "Gallant",
+      color: "#10B981",
+      data: getProgressionData("Gallant"),
+    },
+  ];
 
   const subtitle = `Sem- ${filters.semester} ${filters.className} · Average from assessment`;
-  const labels =
-  Number(filters.semester) === 1
-    ? ["MSE-1", "MSE-2", "ESE"]
-    : ["Pre-MSE", "MSE-1", "MSE-2", "ESE"];
+  const labels = [(filters.semester != 1 && "PRE-MSE"), "MSE-1", "MSE-2", "ESE"].filter(Boolean);
   const footer = `Cohort: ${students.length} · Grade bands over assessment period`;
 
   const chartData = {
