@@ -16,14 +16,6 @@ const DashboardFilters = () => {
   const filters = useTeacherStore((state) => state.filters);
   const setFilters = useTeacherStore((state) => state.setFilters);
 
-  const assessments = [
-    (filters.semester != 1 &&
-      { value: "pre-mse", label: "Pre-MSE" }),
-    { value: "mse-1", label: "MSE-1" },
-    { value: "mse-2", label: "MSE-2" },
-    { value: "ese", label: "ESE" },
-  ].filter(Boolean);
-
   useEffect(() => {
     if (program && filters.program !== program) {
       setFilters({
@@ -103,14 +95,18 @@ const DashboardFilters = () => {
     }
   };
 
-  const isFirstSemester = Number(filters.semester) === 1;
+  
+const isFirstSemester = Number(filters.semester) === 1;
 
-  const filteredAssessments = isFirstSemester
-    ? assessments
-    : [
-      { value: "pre-mse", label: "Pre-MSE" },
-      ...assessments,
-    ];
+const filteredAssessments = [
+  ...(!isFirstSemester
+    ? [{ value: "pre-mse", label: "Pre-MSE" }]
+    : []),
+  { value: "mse-1", label: "MSE-1" },
+  { value: "mse-2", label: "MSE-2" },
+  { value: "ese", label: "ESE" },
+];
+
 
   const fields = [
     { key: "program", label: "Program", options: programs },
