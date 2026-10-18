@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import DashboardFilters from "@/components/teacher/DashboardFilters";
-
-// Import your newly created components
+import useTeacherStore from "@/store/useTeacherStore";
+// Import modular fragments
 import UploadHeader from "./fragments/UploadHeader";
 import UploadSection from "./fragments/UploadSection";
 import ValidationTable from "./fragments/ValidationTable";
 import Header from "@/components/dashboard/Header";
 import ViewUploadHistory from "./fragments/ViewUploadHistory";
+
 
 // Initial mock history data
 const initialHistory = [
@@ -24,7 +25,7 @@ const UploadMarks = () => {
   // Core States
   const [file, setFile] = useState(null);
   const [maxMarks, setMaxMarks] = useState("100");
-  const [currentPhase, setCurrentPhase] = useState(1);
+  const [currentPhase, setCurrentPhase] = useState(1); // Stepper Phases: 1 to 4
   const [parsedData, setParsedData] = useState([]);
   const [errorCount, setErrorCount] = useState(0);
   const [activeView, setActiveView] = useState('upload');
@@ -32,12 +33,18 @@ const UploadMarks = () => {
   // History State
   const [historyData, setHistoryData] = useState(initialHistory);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const activeFilters = useTeacherStore((state) => state.filters);
+
   // File Validation Logic
   const runValidation = (rows, overrideMax = maxMarks) => {
     let errors = 0;
     const rollCounts = {};
     rows.forEach(r => {
-      if(r.roll) rollCounts[r.roll] = (rollCounts[r.roll] || 0) + 1;
+      if (r.roll) rollCounts[r.roll] = (rollCounts[r.roll] || 0) + 1;
+
+      
     });
 
     const validatedRows = rows.map((row) => {
@@ -65,11 +72,9 @@ const UploadMarks = () => {
       } else if (absent === 'No' && numericMarks < 0) {
         status = 'corrected';
         statusText = `Negative max detected (marks<0)`;
-        correctedMarks = "Not allow"  
+        correctedMarks = "Not allow"; 
         errors++; 
-      }
-      
-      else if (absent === 'Yes') {
+      } else if (absent === 'Yes') {
         status = 'absent';
         statusText = 'Valid · Absent';
         correctedMarks = '—';
@@ -94,10 +99,10 @@ const UploadMarks = () => {
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.trim());
         if (cols.length < 5) continue; 
-        rawRows.push({ roll: cols[0], name: cols[1], marks: cols[2], attendance: cols[3], maxMarks: cols[4] });
+        rawRows.push({ roll: cols[0], name: cols[1],maxMarks: cols[2] , marks: cols[3], attendance: cols[4], });
       }
       runValidation(rawRows, maxMarks);
-      setCurrentPhase(2); 
+      setCurrentPhase(3); // Move to Phase 3: Validate & preview
     };
     reader.readAsText(file);
   };
@@ -106,6 +111,7 @@ const UploadMarks = () => {
     if (!selectedFile) return;
     if (!selectedFile.name.endsWith(".csv")) return alert("Please upload a .csv file.");
     setFile(selectedFile);
+    setCurrentPhase(2); // Selecting a file moves active step to 2 (Upload File)
   };
 
   const handleDrop = (e) => {
@@ -114,7 +120,7 @@ const UploadMarks = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = ["Roll_Number,Student_Name,Marks_Obtained,Attendance_Percentage,Max_Marks", "1021,Aman Kumar,32,92,50", "1022,Ravi Singh,65,85,100", "1023,Neha Sharma,105,110,100", "1024,Karan Mehta,,0,100", "1021,Duplicate Aman,20,90,50"].join("\n");
+    const csv = ["Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,", "1021,Aman Kumar,100,92,90", "1022,Ravi Singh,100,85,100", "1023,Neha Sharma,100,60,98", "1024,Karan Mehta,100,79,95", "1031,Dman,100,90,90"].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a");
     link.href = url;
@@ -123,29 +129,69 @@ const UploadMarks = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Push new upload record into history array
-  const handleConfirmSubmission = () => {
+  // Push new upload record into history array and complete flow
+  const handleConfirmSubmission = async() => {
+    if (errorCount > 0) {
+    return alert("Please fix all errors before submitting.");
+  }
+  try {
+    setIsSubmitting(true);
+
+    // 1. Construct dynamic payload
+    console.log(activeFilters.courses);
+    
+    const payload = {
+      marksData: parsedData, // Validated rows from CSV
+      filters: {
+        className: activeFilters?.className || "MCA-1A",
+        courseCode: activeFilters.courses,
+        semester: activeFilters?.semester,
+        assessment: activeFilters?.assessment,
+        academicYear: activeFilters?.academicYear || "2026-27",
+      },
+    };
+
+    console.log(payload);
+    
+    // 2. Send request to backend API
+    const response = await fetch("/dashboard/teacher/upload-marks/api", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Failed to submit marks.");
+    }
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const formattedTime = today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-    const newRecord = {
+const newRecord = {
       id: `UP-${100 + historyData.length + 1}`,
-      filename: file.name,
+      filename: file ? file.name : "marks_upload.csv",
       date: formattedDate,
       time: formattedTime,
       uploader: "Prof. Harsh Sharma",
-      class: "MCA-1A",
-      subject: "DBMS",
-      assessment: "MSE-II",
+      class: activeFilters?.className || "MCA-1A",
+      subject: activeFilters?.courseName || "DBMS",
+      assessment: activeFilters?.assessment || "MSE-II",
       rows: parsedData.length,
-      errors: errorCount,
-      status: errorCount > 0 ? "Partial" : "Success",
+      errors: 0,
+      status: "Success",
     };
 
     setHistoryData([newRecord, ...historyData]);
-    setCurrentPhase(3); 
-  };
+    setCurrentPhase(4); // Move to Phase 4: Confirm Submission / Success
+  }
+  catch (err) {
+    alert("Submission Error: " + err.message);
+  } finally {
+    setIsSubmitting(false);
+  }
+}
 
   // Filter Setup
   const filtersOption = [
@@ -162,22 +208,25 @@ const UploadMarks = () => {
 
   return (
     <>
-      <Header/>
-      <div className=" min-h-screen text-[#0f172a] pb-12" >
-        <main className="bg-[E4EAF2] mx-auto max-w-[1400px] p-5 md:p-5 space-y-5">
+      <Header />
+      <div className="min-h-screen text-[#0f172a] pb-12 font-sans not-italic">
+        <main className="mx-auto max-w-[1400px] p-5 md:p-5 space-y-5">
 
-          {/* Modular Header */}
+          {/* Modular Header & Stepper */}
           <UploadHeader currentPhase={currentPhase} onViewHistory={() => setActiveView('history')} />
 
           {/* Global Filters */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col md:flex-row gap-4 items-end">
+          <div 
+          onFocus={() => setCurrentPhase(1)} // Highlights "1 Select assessment" when focusing filters
+         onClick={() => setCurrentPhase(1)}   // Highlights "1 Select assessment" when clicking filters
+          className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
               <DashboardFilters filters={filtersOption} />
             </div>
           </div>
 
-          {/* Phase 1: Upload */}
-          {currentPhase === 1 && (
+          {/* Phases 1 & 2: Upload Section */}
+          {(currentPhase === 1 || currentPhase === 2) && (
             <UploadSection 
               file={file} 
               handleDrop={handleDrop} 
@@ -185,11 +234,13 @@ const UploadMarks = () => {
               processCSV={processCSV} 
               maxMarks={maxMarks} 
               downloadTemplate={downloadTemplate} 
+              currentPhase={currentPhase}       
+              setCurrentPhase={setCurrentPhase}
             />
           )}
 
-          {/* Phase 2: Validation */}
-          {currentPhase === 2 && (
+          {/* Phase 3: Validation Table */}
+          {currentPhase === 3 && (
             <ValidationTable 
               file={file}
               setFile={setFile}
@@ -199,38 +250,49 @@ const UploadMarks = () => {
               setCurrentPhase={setCurrentPhase}
               runValidation={runValidation}
               maxMarks={maxMarks}
-              onConfirm={handleConfirmSubmission} // Pass function to component
+              onConfirm={handleConfirmSubmission}
+              isSubmitting={isSubmitting}
             />
           )}
 
-          {/* Phase 3: Success */}
-          {currentPhase === 3 && (
-            <div className="bg-white rounded-xl shadow-sm border border-emerald-200 p-6">
-              <h2 className="text-[16px] font-semibold text-slate-800 mb-1">Successful upload</h2>
-              <p className="text-[13px] font-normal text-slate-500 mb-4">Confirmation after submission</p>
-              <div className=" border-l-4 border-[#22c55e] p-4 rounded-r-lg mb-6 flex gap-3 bg-[#f0fdf4]">
-                <CheckCircle2 className="w-5 h-5 text-[#22c55e] flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="text-[13px] font-semibold text-[#15803d]">Marks uploaded successfully</h3>
-                  <p className="text-[12px] font-normal text-slate-600 mt-1">{parsedData.length} student records saved to the database.</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => { setFile(null); setParsedData([]); setCurrentPhase(1); }} 
-                  className="bg-white border border-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg text-[13px] shadow-sm hover:bg-slate-50"
-                >
-                  Upload Another Assessment
-                </button>
-                <button 
-                  onClick={() => setActiveView('history')} 
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-medium px-4 py-2 rounded-lg text-[13px] shadow-sm transition"
-                >
-                  View Updated History
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Phase 4: Success / Confirmation */}
+         
+{currentPhase === 4 && (
+  <div className="bg-white rounded-xl shadow-sm border border-emerald-200 p-6 font-sans not-italic">
+    <h2 className="text-base font-semibold text-slate-800 mb-1">Successful upload</h2>
+    <p className="text-xs font-normal text-slate-500 mb-4">Confirmation after submission</p>
+    
+    <div className="border-l-4 border-[#22c55e] p-4 rounded-r-lg mb-6 flex gap-3 bg-[#f0fdf4]">
+      <CheckCircle2 className="w-5 h-5 text-[#22c55e] flex-shrink-0 mt-0.5" />
+      <div>
+        <h3 className="text-xs font-semibold text-[#15803d]">Marks uploaded successfully</h3>
+        <p className="text-xs font-normal text-slate-600 mt-1">{parsedData.length} student records saved to the database.</p>
+      </div>
+    </div>
+    
+    <div className="flex gap-3">
+      {/* Resets file data and sets phase to 1 (Select assessment) */}
+      <button 
+        onClick={() => { 
+          setFile(null); 
+          setParsedData([]); 
+          setErrorCount(0);
+          setCurrentPhase(1); // Explicitly sets stepper back to '1 Select assessment'
+        }} 
+        className="bg-white border border-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg text-xs shadow-sm hover:bg-slate-50 transition"
+      >
+        Upload Another Assessment
+      </button>
+      
+      <button 
+        onClick={() => setActiveView('history')} 
+        className="bg-slate-900 hover:bg-slate-800 text-white font-medium px-4 py-2 rounded-lg text-xs shadow-sm transition"
+      >
+        View Updated History
+      </button>
+    </div>
+  </div>
+)}
 
         </main>
       </div>
@@ -238,4 +300,4 @@ const UploadMarks = () => {
   );
 };
 
-export default UploadMarks;
+export default UploadMarks; 

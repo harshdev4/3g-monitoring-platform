@@ -8,41 +8,59 @@ export default function UploadSection({
   handleFile, 
   processCSV, 
   maxMarks, 
-  downloadTemplate 
+  downloadTemplate,
+  currentPhase,
+  setCurrentPhase
 }) {
+
+  // Trigger Phase 2 when cursor enters or user interacts with the file upload zone
+  
+  console.log("phase",currentPhase)
+  const handleUploadAreaHover = () => {
+    if (currentPhase === 1 && setCurrentPhase) {
+      setCurrentPhase(2);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-sans not-italic">
       
       {/* Upload Box */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
-        <h2 className="text-[17px] font-semibold text-slate-800 mb-4">Import CSV</h2>
+        <h2 className="text-base font-semibold text-slate-800 mb-4">Import CSV</h2>
+        
         <label 
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
+          onMouseEnter={handleUploadAreaHover}
+          onFocus={handleUploadAreaHover}
           className="flex-1 border-2 border-dashed border-blue-400 bg-blue-50/40 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-blue-50/70 transition"
         >
           <input
             type="file"
             className="hidden"
             accept=".csv"
-            onChange={(event) => handleFile(event.target.files?.[0])}
+            onChange={(event) => {
+              handleFile(event.target.files?.[0]);
+              if (setCurrentPhase) setCurrentPhase(2);
+            }}
           />
           <CloudUpload className="w-10 h-10 text-blue-500 mb-4" />
           
           {file ? (
             <>
               <p className="font-semibold text-slate-800 text-[13px]">{file.name}</p>
-              <p className="text-[12px] font-normal text-slate-500 mt-1 mb-4">File selected successfully.</p>
-              <span className="inline-flex items-center gap-1.5 bg-blue-100 text-blue-800 px-3 py-1.5 rounded-md text-[12px] font-semibold">
+              <p className="text-xs font-normal text-slate-500 mt-1 mb-4">File selected successfully.</p>
+              <span className="inline-flex items-center gap-1.5 bg-blue-100 text-blue-800 px-3 py-1.5 rounded-md text-xs font-semibold">
                 <FileSpreadsheet size={14} />
                 {(file.size / 1024).toFixed(1)} KB
               </span>
             </>
           ) : (
             <>
-              <p className="font-semibold text-slate-800 text-[14px]">Drag & drop your marks file here</p>
-              <p className="text-[11px] font-normal text-slate-500 mt-1 mb-5">CSV only · up to 10 MB · one student per row</p>
-              <div className="bg-white border border-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-lg text-[12px] shadow-sm hover:bg-slate-50">
+              <p className="font-semibold text-slate-800 text-xs">Drag & drop your marks file here</p>
+              <p className="text-xs font-normal text-slate-500 mt-1 mb-5">CSV only · up to 10 MB · one student per row</p>
+              <div className="bg-white border border-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm hover:bg-slate-50">
                 Browse files
               </div>
             </>
@@ -54,7 +72,7 @@ export default function UploadSection({
             type="button"
             disabled={!file}
             onClick={processCSV} 
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg text-[12px] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg text-xs transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Validate & preview
           </button>
@@ -63,18 +81,18 @@ export default function UploadSection({
 
       {/* Template & Import Rules Box */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-[17px] font-semibold text-[#0f172a] mb-5">Template & import rules</h2>
+        <h2 className="text-base font-semibold text-[#0f172a] mb-5">Template & import rules</h2>
         <div className="space-y-4">
           <div>
-            <h3 className="text-[13px] font-semibold text-[#0f172a]">Required columns: Roll_Number, Student_Name, Marks_Obtained, Attendance_Percentage, Max_Marks</h3>
-            <p className="text-[12px] font-normal text-slate-500 mt-1">Marks obtained must not exceed the row's Max_Marks. Use Yes / No for absence; leave marks empty when absent.</p>
+            <h3 className="text-xs font-semibold text-[#0f172a]">Required columns: Roll_Number, Student_Name, Marks_Obtained, Attendance_Percentage, Max_Marks</h3>
+            <p className="text-[13px] font-normal text-slate-500 mt-1">Marks obtained must not exceed the row's Max_Marks. Use Yes / No for absence; leave marks empty when absent.</p>
           </div>
           <div>
-            <h3 className="text-[13px] font-semibold text-[#0f172a]">Match enrolled student rolls</h3>
-            <p className="text-[12px] font-normal text-slate-500 mt-1">Duplicate or unknown rolls cannot be submitted. Category updates use validated marks only.</p>
+            <h3 className="text-xs font-semibold text-[#0f172a]">Match enrolled student rolls</h3>
+            <p className="text-[13px] font-normal text-slate-500 mt-1">Duplicate or unknown rolls cannot be submitted. Category updates use validated marks only.</p>
           </div>
         </div>
-        <button onClick={downloadTemplate} className="mt-6 flex items-center gap-2 bg-white border border-slate-200 text-[#0f172a] font-semibold px-4 py-2.5 rounded-lg text-[12px] shadow-sm hover:bg-slate-50 transition">
+        <button onClick={downloadTemplate} className="mt-6 flex items-center gap-2 bg-white border border-slate-200 text-[#0f172a] font-semibold px-4 py-2.5 rounded-lg text-xs shadow-sm hover:bg-slate-50 transition">
           <ArrowDown size={16} strokeWidth={2.5} className="text-[#0f172a]" />
           Download sample template
         </button>
