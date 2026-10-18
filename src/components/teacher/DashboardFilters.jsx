@@ -103,14 +103,26 @@ const DashboardFilters = () => {
     }
   };
 
+  const isFirstSemester = Number(filters.semester) === 1;
+
+  const filteredAssessments = isFirstSemester
+    ? assessments
+    : [
+      { value: "pre-mse", label: "Pre-MSE" },
+      ...assessments,
+    ];
+
   const fields = [
     { key: "program", label: "Program", options: programs },
     { key: "semester", label: "Semester", options: semesters },
     { key: "className", label: "Class", options: classes },
     { key: "courses", label: "Courses", options: courses },
-    { key: "assessment", label: "Assessment", options: assessments },
+    {
+      key: "assessment",
+      label: "Assessment",
+      options: filteredAssessments,
+    },
   ];
-
   useEffect(() => {
     if (program && filters.program !== program) {
       return;
