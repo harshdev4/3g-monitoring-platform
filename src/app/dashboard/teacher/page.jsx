@@ -13,11 +13,11 @@ import QuickActionsCard from "@/components/teacher/QuickActionsCard";
 import RecentActivityCard from "@/components/teacher/RecentActivityCard";
 import StudentPageStudentTableSection from "@/components/teacher/StudentPageTableSection";
 import StudentsTable from "@/components/teacher/StudentsTable";
-import TeacherStoreInitializer from "@/components/teacher/TeacherStoreInitializer";
+import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer";
 
 const page = async () => {
 
-  const teacher = await getUser("prashant.agarwal@kiet.edu");
+  const teacher = await getUser("annu.yadav@kiet.edu");
 
   if (!teacher) {
     return <p>User not found.</p>

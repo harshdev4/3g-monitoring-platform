@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import DashboardFilters from "@/components/teacher/DashboardFilters";
-import useTeacherStore from "@/store/useTeacherStore";
+
 // Import modular fragments
 import UploadHeader from "./fragments/UploadHeader";
 import UploadSection from "./fragments/UploadSection";
@@ -35,16 +35,12 @@ const UploadMarks = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const activeFilters = useTeacherStore((state) => state.filters);
-
   // File Validation Logic
   const runValidation = (rows, overrideMax = maxMarks) => {
     let errors = 0;
     const rollCounts = {};
     rows.forEach(r => {
       if (r.roll) rollCounts[r.roll] = (rollCounts[r.roll] || 0) + 1;
-
-      
     });
 
     const validatedRows = rows.map((row) => {
@@ -130,42 +126,7 @@ const UploadMarks = () => {
   };
 
   // Push new upload record into history array and complete flow
-  const handleConfirmSubmission = async() => {
-    if (errorCount > 0) {
-    return alert("Please fix all errors before submitting.");
-  }
-  try {
-    setIsSubmitting(true);
-
-    // 1. Construct dynamic payload
-    console.log(activeFilters.courses);
-    
-    const payload = {
-      marksData: parsedData, // Validated rows from CSV
-      filters: {
-        className: activeFilters?.className || "MCA-1A",
-        courseCode: activeFilters.courses,
-        semester: activeFilters?.semester,
-        assessment: activeFilters?.assessment,
-        academicYear: activeFilters?.academicYear || "2026-27",
-      },
-    };
-
-    console.log(payload);
-    
-    // 2. Send request to backend API
-    const response = await fetch("/dashboard/teacher/upload-marks/api", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || "Failed to submit marks.");
-    }
+  const handleConfirmSubmission = () => {
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const formattedTime = today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -185,13 +146,7 @@ const newRecord = {
 
     setHistoryData([newRecord, ...historyData]);
     setCurrentPhase(4); // Move to Phase 4: Confirm Submission / Success
-  }
-  catch (err) {
-    alert("Submission Error: " + err.message);
-  } finally {
-    setIsSubmitting(false);
-  }
-}
+  };
 
   // Filter Setup
   const filtersOption = [
@@ -251,7 +206,6 @@ const newRecord = {
               runValidation={runValidation}
               maxMarks={maxMarks}
               onConfirm={handleConfirmSubmission}
-              isSubmitting={isSubmitting}
             />
           )}
 

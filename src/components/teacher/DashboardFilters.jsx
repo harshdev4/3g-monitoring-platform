@@ -6,13 +6,6 @@ import { ChevronDown } from "lucide-react";
 import useTeacherStore from "@/store/useTeacherStore";
 
 
-const assessments = [
-  { value: "pre-mse", label: "Pre-MSE" },
-  { value: "mse-1", label: "MSE-1" },
-  { value: "mse-2", label: "MSE-2" },
-  { value: "ese", label: "ESE" },
-];
-
 const DashboardFilters = () => {
   const program = useTeacherStore((state) => state.program);
 
@@ -22,6 +15,14 @@ const DashboardFilters = () => {
 
   const filters = useTeacherStore((state) => state.filters);
   const setFilters = useTeacherStore((state) => state.setFilters);
+
+  const assessments = [
+    (filters.semester != 1 &&
+      { value: "pre-mse", label: "Pre-MSE" }),
+    { value: "mse-1", label: "MSE-1" },
+    { value: "mse-2", label: "MSE-2" },
+    { value: "ese", label: "ESE" },
+  ].filter(Boolean);
 
   useEffect(() => {
     if (program && filters.program !== program) {
@@ -41,11 +42,12 @@ const DashboardFilters = () => {
     ? [{ value: program, label: program }]
     : [];
 
+
   const semesters = unique(
     storedCourses
       .filter((course) => course.program === filters.program)
       .map((course) => course.semester)
-  ).map((value) => ({
+  ).sort((a, b) => a - b).map((value) => ({
     value: String(value),
     label: `Semester ${value}`,
   }));
@@ -71,7 +73,7 @@ const DashboardFilters = () => {
           String(course.semester) === String(filters.semester) &&
           course.className === filters.className
       )
-      .map((course) => ({courseName: course.course, value: course.course_code, label: course.course })));
+      .map((course) => ({ courseName: course.course, value: course.course_code, label: course.course })));
 
 
   const updateFilter = (key, label, value) => {
@@ -94,8 +96,8 @@ const DashboardFilters = () => {
         courses: "",
       });
     } else {
-      if(key=="courses"){
-        setFilters({courseName: label})
+      if (key == "courses") {
+        setFilters({ courseName: label })
       }
       setFilters({ [key]: value });
     }
@@ -123,8 +125,8 @@ const DashboardFilters = () => {
       );
 
       if (filter.options.length > 0 && !hasCurrentValue) {
-        if(filter.key == "courses"){
-          setFilters({courseName: filter.options[0].courseName});
+        if (filter.key == "courses") {
+          setFilters({ courseName: filter.options[0].courseName });
         }
         setFilters({
           [filter.key]: filter.options[0].value,
@@ -136,7 +138,7 @@ const DashboardFilters = () => {
         setFilters({
           [filter.key]: "",
         });
-        setFilters({courseName: ""});
+        setFilters({ courseName: "" });
       }
     });
 

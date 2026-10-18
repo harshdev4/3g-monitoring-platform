@@ -1,11 +1,11 @@
 import getAssignedCourses from "@/app/api/teachers/getAssignedCourses";
 import getUser from "@/app/api/users/getUser";
-import InitializeAssignedCourses from "@/components/teacher/InitializeAssignedCourses";
+import InitializeAssignedCourses from "@/components/mapper/InitializeAssignedCourses";
 import Sidebar from "@/components/teacher/Sidebar";
-import TeacherStoreInitializer from "@/components/teacher/TeacherStoreInitializer";
+import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer";
 
 const TeacherDashboardLayout = async ({ children }) => {
-    const teacher = await getUser("prashant.agarwal@kiet.edu");
+    const teacher = await getUser("annu.yadav@kiet.edu");
     const assignedCourses = await getAssignedCourses(teacher.empId);
     return (
         <>
