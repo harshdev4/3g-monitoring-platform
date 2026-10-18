@@ -7,10 +7,11 @@ import DistributionCard from "@/components/teacher/DistributionCard";
 import ProgressionCard from '@/components/teacher/ProgressionCard';
 import PerformanceStudentsInitializer from
   "@/components/mapper/PerformanceStudentsInitializer";
-  import PerformanceMatricSection from '@/components/teacher/PerformanceMatricSection'
+import PerformanceMatricSection from '@/components/teacher/PerformanceMatricSection'
+import CheckpointComparison from './CheckpointComparison'
 
-const page =  () => {
-  
+const page = () => {
+
   const progressionSeries = [
     {
       label: "Gradual",
@@ -57,6 +58,11 @@ const page =  () => {
             labels={["Pre-MSE", "MSE-1", "MSE-2", "ESE"]}
             series={progressionSeries}
             footer="Cohort: 120 · Growing up · Grade bands over assessment period"
+          />
+        </div>
+        <div className="py-5">
+          <CheckpointComparison
+            apiEndpoint="/api/teachers/students-with-all-assessments"
           />
         </div>
       </div>
