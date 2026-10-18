@@ -11,6 +11,7 @@ import ValidationTable from "./fragments/ValidationTable";
 import Header from "@/components/dashboard/Header";
 import ViewUploadHistory from "./fragments/ViewUploadHistory";
 
+
 // Initial mock history data
 const initialHistory = [
   { id: "UP-104", filename: "dbms_mse2.xlsx", date: "04 Oct 2026", time: "09:15", uploader: "Prof. Harsh Sharma", class: "1A & 1B", subject: "DBMS", assessment: "MSE-II", rows: 120, errors: 0, status: "Success" },
@@ -94,7 +95,7 @@ const UploadMarks = () => {
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.trim());
         if (cols.length < 5) continue; 
-        rawRows.push({ roll: cols[0], name: cols[1], marks: cols[2], attendance: cols[3], maxMarks: cols[4] });
+        rawRows.push({ roll: cols[0], name: cols[1],maxMarks: cols[2] , marks: cols[3], attendance: cols[4], });
       }
       runValidation(rawRows, maxMarks);
       setCurrentPhase(3); // Move to Phase 3: Validate & preview
@@ -115,7 +116,7 @@ const UploadMarks = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = ["Roll_Number,Student_Name,Marks_Obtained,Attendance_Percentage,Max_Marks", "1021,Aman Kumar,32,92,50", "1022,Ravi Singh,65,85,100", "1023,Neha Sharma,105,110,100", "1024,Karan Mehta,,0,100", "1021,Duplicate Aman,20,90,50"].join("\n");
+    const csv = ["Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,", "1021,Aman Kumar,100,92,90", "1022,Ravi Singh,100,85,100", "1023,Neha Sharma,100,60,98", "1024,Karan Mehta,100,79,95", "1031,Dman,100,90,90"].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a");
     link.href = url;
@@ -129,19 +130,18 @@ const UploadMarks = () => {
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const formattedTime = today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-    const newRecord = {
+const newRecord = {
       id: `UP-${100 + historyData.length + 1}`,
-      filename: file.name,
+      filename: file ? file.name : "marks_upload.csv",
       date: formattedDate,
       time: formattedTime,
       uploader: "Prof. Harsh Sharma",
-      class: "MCA-1A",
-      subject: "DBMS",
-      assessment: "MSE-II",
+      class: activeFilters?.className || "MCA-1A",
+      subject: activeFilters?.courseName || "DBMS",
+      assessment: activeFilters?.assessment || "MSE-II",
       rows: parsedData.length,
-      errors: errorCount,
-      status: errorCount > 0 ? "Partial" : "Success",
+      errors: 0,
+      status: "Success",
     };
 
     setHistoryData([newRecord, ...historyData]);
