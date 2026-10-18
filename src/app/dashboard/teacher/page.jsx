@@ -4,68 +4,24 @@ import Header from "@/components/dashboard/Header";
 import UserWorkSpace from "@/components/dashboard/UserWorkSpace";
 import AttentionCard from "@/components/teacher/AttentionCard";
 import DashboardFilters from "@/components/teacher/DashboardFilters";
+import DashboardMatricSection from "@/components/teacher/DashboardMatricSection";
 import DistributionCard from "@/components/teacher/DistributionCard";
 import MetricCards from "@/components/teacher/MetricCards";
 import MonitoringCard from "@/components/teacher/MonitoringCard";
 import ProgressionCard from "@/components/teacher/ProgressionCard";
 import QuickActionsCard from "@/components/teacher/QuickActionsCard";
 import RecentActivityCard from "@/components/teacher/RecentActivityCard";
+import StudentPageStudentTableSection from "@/components/teacher/StudentPageTableSection";
 import StudentsTable from "@/components/teacher/StudentsTable";
 import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer";
 
 const page = async () => {
 
   const teacher = await getUser("annu.yadav@kiet.edu");
-  
-  if(!teacher){
+
+  if (!teacher) {
     return <p>User not found.</p>
   }
-
-  const progressionSeries = [
-    {
-      label: "Gradual",
-      color: "#EF4444",
-      data: [42, 50, 60, 70],
-    },
-    {
-      label: "Growing",
-      color: "#F59E0B",
-      data: [42, 57, 68, 82],
-    },
-    {
-      label: "Gallant",
-      color: "#10B981",
-      data: [42, 52, 64, 78],
-    },
-  ];
-
-  const quickActions = [
-    {
-      label: "Upload Marks",
-      type: "upload",
-      href: "/dashboard/teacher/upload-marks/",
-    },
-    {
-      label: "Create Action",
-      type: "create",
-      href: "/dashboard/teacher/actions",
-    },
-  ];
-
-  const attentionStudents = [
-    {
-      id: 1,
-      name: "Arman Kumar",
-      rollNo: "MCA-101",
-      reason: "32% MSE-1 · Attendance below 75%",
-    },
-    {
-      id: 2,
-      name: "Karan Mehta",
-      rollNo: "MCA-104",
-      reason: "Low assessment score · Needs follow-up",
-    },
-  ];
 
   const monitoringItems = [
     {
@@ -100,9 +56,9 @@ const page = async () => {
     },
   ];
 
-  return ( 
+  return (
     <div>
-      <TeacherStoreInitializer teacher={teacher}/>
+      <TeacherStoreInitializer teacher={teacher} />
       <Header></Header>
       <div className="p-5">
         <UserWorkSpace
@@ -114,11 +70,11 @@ const page = async () => {
           welcomeDescription="Track your students, support their progress and review today's priorities."
         />
 
-        <DashboardFilters/>
-        {/* Metrics */}
+        <DashboardFilters />
 
+        {/* Metrics */}
         <div className="mt-3">
-          <MetricCards/>
+          <DashboardMatricSection />
         </div>
 
         {/* Charts */}
@@ -128,31 +84,12 @@ const page = async () => {
             note=""
           />
 
-          <ProgressionCard
-            subtitle="MCA-1A · Average from assessment"
-            labels={["Pre-MSE", "MSE-1", "MSE-2", "ESE"]}
-            series={progressionSeries}
-            footer="Cohort: 120 · Growing up · Grade bands over assessment period"
-          />
+          <ProgressionCard/>
         </div>
-
-        {/* Attention + Actions */}
-        {/* <div className="mt-3 grid gap-3 lg:grid-cols-2">
-          <AttentionCard
-            subtitle="Students needing support"
-            students={attentionStudents}
-          />
-
-          <QuickActionsCard
-            actions={quickActions}
-            evidenceCount={8}
-            evidenceText="Answer sheets, projects and completion proofs"
-          />
-        </div> */}
 
         {/* Students */}
         <div className="mt-3">
-          <StudentsTable title={"My Students"}/>
+          <StudentPageStudentTableSection />
         </div>
 
         {/* Bottom cards */}

@@ -9,35 +9,34 @@ export default function UploadHeader({ currentPhase, onViewHistory }) {
   ];
 
   return (
-    <div className="space-y-6  ">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 ">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-medium text-slate-500  tracking-wide">Teacher workspace</p>
-          <h1 className="text-[27px] font-semibold text-[#0f172a] mt-1">Upload Marks</h1>
-          <p className="text-[12px] font-normal text-slate-500 mt-1">
+          <p className="text-[10px] font-medium text-slate-500 tracking-wide uppercase">Teacher workspace</p>
+          <h1 className="text-2xl font-semibold text-[#0f172a] mt-1">Upload Marks</h1>
+          <p className="text-xs font-normal text-slate-500 mt-1">
             Import assessment marks, validate student records and publish a checkpoint.
           </p>
         </div>
         <button 
-          onClick={onViewHistory} // <-- Attach to button
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-[12px] transition shadow-sm"
-        >View Upload History</button>
+          onClick={onViewHistory}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-xs transition shadow-sm"
+        >
+          View Upload History
+        </button>
       </div>
 
       {/* Stepper */}
       <div className="flex flex-col sm:flex-row gap-3">
         {steps.map((step, idx) => {
-          // Determine active state mapping based on currentPhase
-          let isActive = false;
-          if (currentPhase === 1 && idx === 1) isActive = true; // Phase 1 highlights Step 2
-          if (currentPhase === 2 && idx === 2) isActive = true; // Phase 2 highlights Step 3
-          if (currentPhase === 3 && idx === 3) isActive = true; // Phase 3 highlights Step 4
+          // Highlight active step based on currentPhase (1-indexed)
+          const isActive = currentPhase === idx + 1;
 
           return (
             <div 
               key={idx} 
-              className={`flex-1 border rounded-lg p-3 text-[12px] transition-colors ${
+              className={`flex-1 border rounded-lg p-3 text-xs transition-colors ${
                 isActive 
                   ? 'border-blue-600 text-blue-700 bg-blue-50/50 font-semibold' 
                   : 'bg-white border-slate-200 text-slate-500 font-medium'

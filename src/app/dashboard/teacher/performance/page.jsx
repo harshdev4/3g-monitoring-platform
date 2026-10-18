@@ -5,15 +5,13 @@ import DashboardFilters from "@/components/teacher/DashboardFilters";
 import MetricCards from "@/components/teacher/MetricCards";
 import DistributionCard from "@/components/teacher/DistributionCard";
 import ProgressionCard from '@/components/teacher/ProgressionCard';
-import getUser from "@/app/api/users/getUser";
-import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer";
+import PerformanceStudentsInitializer from
+  "@/components/mapper/PerformanceStudentsInitializer";
+import PerformanceMatricSection from '@/components/teacher/PerformanceMatricSection'
+import CheckpointComparison from './CheckpointComparison'
 
-const page = async () => {
-  const teacher = await getUser("annu.yadav@kiet.edu");
-  
-  if(!teacher){
-    return <p>User not found.</p>
-  }
+const page = () => {
+
   const progressionSeries = [
     {
       label: "Gradual",
@@ -33,7 +31,7 @@ const page = async () => {
   ];
   return (
     <div>
-      <TeacherStoreInitializer teacher={teacher}/>
+      {/* <TeacherStoreInitializer teacher={teacher}/> */}
       <Header />
       <div className="p-5">
         <UserWorkSpace
@@ -45,8 +43,9 @@ const page = async () => {
           showWelcome={false}
         />
         <DashboardFilters />
+        <PerformanceStudentsInitializer />
         <div className="mt-3">
-          <MetricCards />
+          <PerformanceMatricSection />
         </div>
         <div className="mt-3 grid gap-3 lg:grid-cols-2">
           <DistributionCard
@@ -59,6 +58,11 @@ const page = async () => {
             labels={["Pre-MSE", "MSE-1", "MSE-2", "ESE"]}
             series={progressionSeries}
             footer="Cohort: 120 · Growing up · Grade bands over assessment period"
+          />
+        </div>
+        <div className="py-5">
+          <CheckpointComparison
+            apiEndpoint="/api/teachers/students-with-all-assessments"
           />
         </div>
       </div>

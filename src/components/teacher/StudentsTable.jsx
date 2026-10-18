@@ -12,15 +12,9 @@ import {
 import useTeacherStore from "@/store/useTeacherStore";
 import useFilterStudentsStore from "@/store/useFilterStudentsStore";
 import Link from "next/link";
+import axios from "axios";
 
 const PAGE_SIZE = 10;
-
-const CATEGORY_OPTIONS = [
-  { value: "all", label: "All categories" },
-  { value: "Gallant", label: "Gallant" },
-  { value: "Growing", label: "Growing" },
-  { value: "Gradual", label: "Gradual" },
-];
 
 const CATEGORY_STYLES = {
   Gallant: "bg-emerald-50 text-emerald-700",
@@ -201,34 +195,29 @@ function Pagination({ pagination, loading, onPageChange }) {
   );
 }
 
-export default function StudentsTable({ title, subtitle }) {
+export default function StudentsTable({ title, subtitle, categoryPage = "All", students, loading, error, setRetryCount }) {
+  let CATEGORY_OPTIONS = []
+
+  if (categoryPage == "At Risk") {
+    CATEGORY_OPTIONS = [
+      { value: "All", label: "All categories" },
+      { value: "Gradual", label: "Gradual" },
+      { value: "Attendance", label: "Low Attendace" },
+    ];
+  } else {
+    CATEGORY_OPTIONS = [
+      { value: "All", label: "All categories" },
+      { value: "Gallant", label: "Gallant" },
+      { value: "Growing", label: "Growing" },
+      { value: "Gradual", label: "Gradual" },
+    ];
+  }
+
   const filters = useTeacherStore((state) => state.filters);
 
-  const students = useFilterStudentsStore(
-    (state) => state.students
-  );
-  const setStudents = useFilterStudentsStore(
-    (state) => state.setStudents
-  );
-  const loading = useFilterStudentsStore(
-    (state) => state.loading
-  );
-  const setLoading = useFilterStudentsStore(
-    (state) => state.setLoading
-  );
-  const error = useFilterStudentsStore(
-    (state) => state.error
-  );
-  const setError = useFilterStudentsStore(
-    (state) => state.setError
-  );
-  const clearStudents = useFilterStudentsStore(
-    (state) => state.clearStudents
-  );
-
   const [currentPage, setCurrentPage] = useState(1);
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [retryCount, setRetryCount] = useState(0);
+  const [categoryFilter, setCategoryFilter] = useState("All");
+
 
   const hasRequiredFilters = Boolean(
     filters.semester &&
@@ -249,94 +238,26 @@ export default function StudentsTable({ title, subtitle }) {
     categoryFilter,
   ]);
 
-  // Fetch all matching students once for the selected filters.
-  const fetchStudents = useCallback(
-    async (signal) => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch("/api/teachers/students", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filters: {
-              ...filters,
-              subject: filters.courses,
-            },
-          }),
-          signal,
-        });
-
-        if (!response.ok) {
-          throw new Error("Unable to load students.");
-        }
-
-        const result = await response.json();
-
-        if (!Array.isArray(result.students)) {
-          throw new Error("Invalid student response.");
-        }
-
-        setStudents(result.students);
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          clearStudents();
-          setError(
-            "Unable to load student records. Please try again."
-          );
-        }
-      } finally {
-        if (!signal.aborted) {
-          setLoading(false);
-        }
-      }
-    },
-    [
-      filters.program,
-      filters.semester,
-      filters.className,
-      filters.courses,
-      filters.assessment,
-      setStudents,
-      setLoading,
-      setError,
-      clearStudents,
-    ]
-  );
-
-  useEffect(() => {
-    if (!hasRequiredFilters) {
-      clearStudents();
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    fetchStudents(controller.signal);
-
-    return () => controller.abort();
-  }, [
-    hasRequiredFilters,
-    fetchStudents,
-    clearStudents,
-    setLoading,
-    setError,
-    retryCount,
-  ]);
 
   // Filter the stored records without making another API request.
-  const filteredStudents =
-    categoryFilter === "all"
-      ? students
-      : students.filter(
-        (student) =>
-          student.three_g_category === categoryFilter
-      );
+  let filteredStudents = "";
+
+  if (categoryPage == "At Risk") {
+    if (categoryFilter === "All") filteredStudents = students;
+    else if (categoryFilter === "Gradual") filteredStudents = students.filter(student => student.three_g_category == categoryFilter);
+    else if (categoryFilter == "Attendance") {
+      filteredStudents = students.filter(student => student.attendance_pct < 75);
+    }
+  } else {
+    filteredStudents =
+      categoryFilter === "All"
+        ? students
+        : students.filter(
+          (student) =>
+            student.three_g_category === categoryFilter
+        );
+  }
+
 
   const total = filteredStudents.length;
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -389,7 +310,7 @@ export default function StudentsTable({ title, subtitle }) {
             <span>
               Total:{" "}
               <span className="font-semibold text-slate-700">
-                {students.length}
+                {filteredStudents.length}
               </span>
             </span>
           </div>
@@ -464,9 +385,9 @@ export default function StudentsTable({ title, subtitle }) {
                 <col className="w-[19%]" />
                 <col className="w-[10%]" />
                 <col className="w-[12%]" />
+                <col className="w-[10%]" />
                 <col className="w-[13%]" />
-                <col className="w-[12%]" />
-                <col className="w-[13%]" />
+                <col className="w-[15%]" />
               </colgroup>
 
               <thead className="bg-slate-50">
@@ -476,7 +397,7 @@ export default function StudentsTable({ title, subtitle }) {
                     "Roll no.",
                     "Class",
                     "Attendance",
-                    "Assessment",
+                    "Marks",
                     "3G category",
                     "Action",
                   ].map((heading) => (

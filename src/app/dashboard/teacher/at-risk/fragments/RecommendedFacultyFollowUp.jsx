@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const recommendations = [
   {
     id: 1,
@@ -43,13 +45,12 @@ const RecommendedFacultyFollowUp = ({
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={() => onCreateAction?.(student)}
+      <Link
+        href="/dashboard/teacher/actions"
         className="mt-4 inline-flex items-center gap-1 rounded-md bg-[#2864E8] px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-700"
       >
         Create / Assign Action
-      </button>
+      </Link>
     </section>
   );
 };
