@@ -15,18 +15,18 @@ export async function POST(req) {
   try {
     const body = await req.json();
     const { marksData, filters } = body;
-    
+
     if (!marksData || !Array.isArray(marksData) || marksData.length === 0) {
       return NextResponse.json(
         { error: "No records found to insert." },
         { status: 400 }
       );
     }
-      
+
     // Map UI dropdown labels to PostgreSQL Enum / Check Constraints
 
     const type = filters.assessment;
-    const semester = Number(filters?.semester) ;
+    const semester = Number(filters?.semester);
     const academicYear = filters?.academicYear || "2026-27";
     const courseId = filters?.courseCode;
 
@@ -34,7 +34,7 @@ export async function POST(req) {
     console.log(semester);
     console.log(academicYear);
     console.log(courseId);
-    
+
     // Start SQL Transaction
     await client.query("BEGIN");
 
@@ -43,19 +43,19 @@ export async function POST(req) {
       const obtainedMark = record.absent === "Yes" ? null : Number(record.correctedMarks || record.marks);
       const maxMark = Number(record.maxMarks) || 100;
       const attendancePct = record.attendance ? Number(record.attendance) : null;
-      const Observation=record.facultyObservation ;
+      const Observation = record.facultyObservation;
 
-   
+
       const enrollmentCheck = await client.query(
-  `SELECT 1 FROM public.course_enrollment 
+        `SELECT 1 FROM public.course_enrollment 
    WHERE course_id = $1 AND student_id = $2 AND semester = $3 AND academic_year = $4;`,
-  [courseId, studentRoll, semester, academicYear]
-);
+        [courseId, studentRoll, semester, academicYear]
+      );
 
-// If no record is found, stop the process and throw an error
-if (enrollmentCheck.rowCount === 0) {
-  throw new Error(`Student ${studentRoll} is not enrolled in course ${courseId} for the selected semester/year.`);
-}
+      // If no record is found, stop the process and throw an error
+      if (enrollmentCheck.rowCount === 0) {
+        throw new Error(`Student ${studentRoll} is not enrolled in course ${courseId} for the selected semester/year.`);
+      }
 
       // 2. Insert record into public.assessments
       await client.query(
@@ -76,7 +76,7 @@ if (enrollmentCheck.rowCount === 0) {
           maxMark,
           obtainedMark,
           attendancePct,
-          Observation, 
+          Observation,
           courseId,
           studentRoll,
           semester,
