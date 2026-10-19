@@ -1,17 +1,7 @@
 import { NextResponse } from "next/server";
-import { Pool } from "pg";
-
-// PostgreSQL Pool configured for Aiven SSL
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
+import pool from "@/config/db.config";
 
 export async function POST(req) {
-  const client = await pool.connect();
-
   try {
     const body = await req.json();
     const { marksData, filters } = body;
@@ -23,20 +13,20 @@ export async function POST(req) {
       );
     }
 
-    // Map UI dropdown labels to PostgreSQL Enum / Check Constraints
+    if (!filters?.assessment || !filters?.semester || !filters?.courseCode || !filters?.academicYear) {
+      return NextResponse.json(
+        { error: "Missing filters found to insert." },
+        { status: 400 }
+      );
+    }
 
     const type = filters.assessment;
-    const semester = Number(filters?.semester);
-    const academicYear = filters?.academicYear || "2026-27";
-    const courseId = filters?.courseCode;
-
-    console.log(type);
-    console.log(semester);
-    console.log(academicYear);
-    console.log(courseId);
+    const semester = Number(filters.semester);
+    const academicYear = filters.academicYear;
+    const courseId = filters.courseCode;
 
     // Start SQL Transaction
-    await client.query("BEGIN");
+    await pool.query("BEGIN");
 
     for (const record of marksData) {
       const studentRoll = record.roll;
@@ -46,7 +36,7 @@ export async function POST(req) {
       const Observation = record.facultyObservation;
 
 
-      const enrollmentCheck = await client.query(
+      const enrollmentCheck = await pool.query(
         `SELECT 1 FROM public.course_enrollment 
    WHERE course_id = $1 AND student_id = $2 AND semester = $3 AND academic_year = $4;`,
         [courseId, studentRoll, semester, academicYear]
@@ -58,7 +48,7 @@ export async function POST(req) {
       }
 
       // 2. Insert record into public.assessments
-      await client.query(
+      await pool.query(
         `INSERT INTO public.assessments2 (
            type, 
            max_mark, 
@@ -86,20 +76,18 @@ export async function POST(req) {
     }
 
     // Commit Transaction
-    await client.query("COMMIT");
+    await pool.query("COMMIT");
 
     return NextResponse.json({
       success: true,
       message: `${marksData.length} records successfully written to PostgreSQL.`,
     });
   } catch (error) {
-    await client.query("ROLLBACK");
+    await pool.query("ROLLBACK");
     console.error("Database Insert Error:", error);
     return NextResponse.json(
       { error: "Failed to upload marks: " + error.message },
       { status: 500 }
     );
-  } finally {
-    client.release();
   }
 }

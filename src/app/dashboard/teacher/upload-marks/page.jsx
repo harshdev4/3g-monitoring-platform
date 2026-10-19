@@ -10,6 +10,8 @@ import UploadSection from "./fragments/UploadSection";
 import ValidationTable from "./fragments/ValidationTable";
 import Header from "@/components/dashboard/Header";
 import ViewUploadHistory from "./fragments/ViewUploadHistory";
+import axios from "axios";
+import { toast } from "sonner";
 
 
 // Initial mock history data
@@ -119,23 +121,39 @@ const UploadMarks = () => {
     handleFile(e.dataTransfer.files?.[0]);
   };
 
-  const downloadTemplate = () => {
-    // Added 'Observation' to the header and sample text to the rows
-    const csv = [
-      "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,Observation",
-      "1021,Aman Kumar,100,92,90,Good",
-      "1022,Ravi Singh,100,85,100,Excellent",
-      "1023,Neha Sharma,100,60,98,Needs improvement",
-      "1024,Karan Mehta,100,79,95,Consistent",
-      "1031,Dman,100,90,90,Satisfactory"
-    ].join("\n");
+  const downloadTemplate = async () => {
+    try {
+      const response = await axios.post("/api/teachers/getStudentForMarks", { filters: activeFilters });
+      const students = response.data.students;
 
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "marks_template.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+      const csv = [
+        "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,Observation",
+        ...students.map((student) =>
+          [
+            `="${student.university_roll_no}"`,
+            `"${(student.name ?? "").replace(/"/g, '""')}"`,
+            "",
+            "",
+            "",
+            "",
+          ].join(",")
+        ),
+      ].join("\n");
+
+      const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${activeFilters.courseName}-studentList.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download marks template:", error);
+
+      toast.error(
+        error.response?.data?.message ||
+        "Failed to download marks template. Please try again."
+      );
+    }
   };
 
   // Push new upload record into history array and complete flow
