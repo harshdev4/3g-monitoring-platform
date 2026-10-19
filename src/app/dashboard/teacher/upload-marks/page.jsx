@@ -94,8 +94,8 @@ const UploadMarks = () => {
       const rawRows = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.trim());
-        if (cols.length < 5) continue; 
-        rawRows.push({ roll: cols[0], name: cols[1],maxMarks: cols[2] , marks: cols[3], attendance: cols[4], });
+        if (cols.length < 6) continue; 
+        rawRows.push({ roll: cols[0], name: cols[1],maxMarks: cols[2] , marks: cols[3], attendance: cols[4],facultyObservation:cols[5] });
       }
       runValidation(rawRows, maxMarks);
       setCurrentPhase(3); // Move to Phase 3: Validate & preview
@@ -115,8 +115,17 @@ const UploadMarks = () => {
     handleFile(e.dataTransfer.files?.[0]);
   };
 
-  const downloadTemplate = () => {
-    const csv = ["Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,", "1021,Aman Kumar,100,92,90", "1022,Ravi Singh,100,85,100", "1023,Neha Sharma,100,60,98", "1024,Karan Mehta,100,79,95", "1031,Dman,100,90,90"].join("\n");
+const downloadTemplate = () => {
+    // Added 'Observation' to the header and sample text to the rows
+    const csv = [
+      "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,Observation", 
+      "1021,Aman Kumar,100,92,90,Good", 
+      "1022,Ravi Singh,100,85,100,Excellent", 
+      "1023,Neha Sharma,100,60,98,Needs improvement", 
+      "1024,Karan Mehta,100,79,95,Consistent", 
+      "1031,Dman,100,90,90,Satisfactory"
+    ].join("\n");
+    
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a");
     link.href = url;
@@ -126,7 +135,42 @@ const UploadMarks = () => {
   };
 
   // Push new upload record into history array and complete flow
-  const handleConfirmSubmission = () => {
+  const handleConfirmSubmission = async() => {
+    if (errorCount > 0) {
+    return alert("Please fix all errors before submitting.");
+  }
+  try {
+    setIsSubmitting(true);
+
+    // 1. Construct dynamic payload
+    console.log(activeFilters.courses);
+    
+    const payload = {
+      marksData: parsedData, // Validated rows from CSV
+      filters: {
+        className: activeFilters?.className || "MCA-1A",
+        courseCode: activeFilters.courses,
+        semester: activeFilters?.semester,
+        assessment: activeFilters?.assessment,
+        academicYear: activeFilters?.academicYear || "2026-27",
+      },
+    };
+
+    console.log(payload);
+    
+    // 2. Send request to backend API
+    const response = await fetch("/api/marks/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Failed to submit marks.");
+    }
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const formattedTime = today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
