@@ -56,7 +56,7 @@ const page = async () => {
     },
   ];
 
-  return (
+  return ( 
     <div>
       <TeacherStoreInitializer teacher={teacher} />
       <Header></Header>

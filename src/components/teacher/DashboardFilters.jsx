@@ -4,11 +4,12 @@
 import { useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import useTeacherStore from "@/store/useTeacherStore";
+import { usePathname } from "next/navigation";
 
 
 const DashboardFilters = () => {
   const program = useTeacherStore((state) => state.program);
-
+  const pathname = usePathname();
   const storedCourses = useTeacherStore(
     (state) => state.assignedCourses
   );
@@ -95,17 +96,18 @@ const DashboardFilters = () => {
     }
   };
 
-  
-const isFirstSemester = Number(filters.semester) === 1;
 
-const filteredAssessments = [
-  ...(!isFirstSemester
-    ? [{ value: "pre-mse", label: "Pre-MSE" }]
-    : []),
-  { value: "mse-1", label: "MSE-1" },
-  { value: "mse-2", label: "MSE-2" },
-  { value: "ese", label: "ESE" },
-];
+  const isFirstSemester = Number(filters.semester) === 1;
+
+  const filteredAssessments = [
+    ...(!pathname.includes("/teacher/upload-marks") && !isFirstSemester
+      ? [{ value: "pre-mse", label: "Pre-MSE" }]
+      : []
+    ),
+    { value: "mse-1", label: "MSE-1" },
+    { value: "mse-2", label: "MSE-2" },
+    { value: "ese", label: "ESE" },
+  ];
 
 
   const fields = [

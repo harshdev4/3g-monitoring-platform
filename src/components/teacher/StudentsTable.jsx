@@ -55,7 +55,7 @@ function CategoryBadge({ category }) {
 function AssessmentBadge({ student }) {
   const obtained = Number(student.obtained_mark);
   const maximum = Number(student.max_mark);
-
+  
   const valid =
     student.obtained_mark != null &&
     student.obtained_mark !== "" &&

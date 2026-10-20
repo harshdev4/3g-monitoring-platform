@@ -15,7 +15,7 @@ const Header = () => {
       </h2>
       {/* profile & notification div */}
       <div className="flex gap-2.5">
-        <NotificationButton count={notificationCount}></NotificationButton>
+        {/* <NotificationButton count={notificationCount}></NotificationButton> */}
         <ProfileIcon />
       </div>
     </div>

@@ -37,6 +37,13 @@ const getDashboardStudents = async (filter) => {
 
       WHERE s.semester = $1
         AND s.section = $2
+        AND EXISTS (
+          SELECT 1
+          FROM public.course_enrollment ce
+          WHERE ce.student_id = s.university_roll_no
+            AND ce.course_id = $3
+            AND ce.semester = s.semester
+        )
     )
 
     SELECT
@@ -59,7 +66,8 @@ const getDashboardStudents = async (filter) => {
 
     const { rows } = await pool.query(query, [
       semester,
-      section
+      section,
+      courses
     ]);
     return rows;
   }
@@ -106,6 +114,7 @@ const getDashboardStudents = async (filter) => {
       section,
       attendance_pct,
       obtained_mark,
+      max_mark,
       CASE
         WHEN marks_rank IS NULL THEN NULL
         WHEN marks_rank <= 10 THEN 'Gallant'
@@ -126,6 +135,7 @@ const getDashboardStudents = async (filter) => {
       courses,
       assessment,
     ]);
+
     return rows;
   }
 };

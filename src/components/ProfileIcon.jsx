@@ -2,6 +2,7 @@
 
 import useTeacherStore from "@/store/useTeacherStore";
 import { ChevronDown } from "lucide-react";
+import Link from "next/link";
 
 const ProfileIcon = () => {
     const name = useTeacherStore((state) => state.name);
@@ -10,7 +11,7 @@ const ProfileIcon = () => {
     const nameArr = name.split(" ");
     const shortName = nameArr.map(word => word.slice(0,1)).slice(0, 2);
     return (
-        <div className="flex gap-1 items-start relative cursor-pointer" title={name}>
+        <Link href={"teacher/profile"} className="flex gap-1 items-start relative cursor-pointer" title={name}>
             <div className="rounded-full bg-navy w-fit px-2 p-1.75 text-white font-inter text-[11px]">
                 <h4>{shortName}</h4>
             </div>
@@ -21,7 +22,7 @@ const ProfileIcon = () => {
             <div className="relative h-4 w-4">
                 <ChevronDown className="absolute top-[50%] right-0 h-4 w-4 text-[#66758D] cursor-pointer" />
             </div>
-        </div>
+        </Link>
     );
 };
 
