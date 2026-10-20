@@ -236,6 +236,30 @@ CREATE TABLE public.assessments (
 );
 
 
+CREATE TABLE student_academic_records (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    student_id VARCHAR NOT NULL
+        REFERENCES students(university_roll_no),
+
+    semester INTEGER NOT NULL,
+    academic_year VARCHAR NOT NULL,
+
+    sgpa NUMERIC(4, 2),
+    cgpa NUMERIC(4, 2),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT valid_sgpa
+        CHECK (sgpa IS NULL OR sgpa BETWEEN 0 AND 10),
+
+    -- CONSTRAINT valid_cgpa
+    --     CHECK (cgpa IS NULL OR cgpa BETWEEN 0 AND 10),
+
+    CONSTRAINT unique_student_academic_record
+        UNIQUE (student_id, semester, academic_year)
+);
+
 -- --------------------------------------------
 -- 10. INDEXES FOR COMMON LOOKUPS
 -- --------------------------------------------
@@ -259,6 +283,9 @@ CREATE INDEX idx_assigned_courses_course
 
 CREATE INDEX idx_course_enrollment_student
     ON public.course_enrollment(student_id);
+
+CREATE INDEX idx_student_academic_records
+    ON public.student_academic_records(student_id, semester, academic_year);
 
 CREATE INDEX idx_assessments_student_course
     ON public.assessments(student_id, course_id);

@@ -84,7 +84,7 @@ export default function UploadSection({
         <h2 className="text-base font-semibold text-[#0f172a] mb-5">Template & import rules</h2>
         <div className="space-y-4">
           <div>
-            <h3 className="text-xs font-semibold text-[#0f172a]">Required columns: Roll_Number, Student_Name, Marks_Obtained, Attendance_Percentage, Max_Marks</h3>
+            <h3 className="text-xs font-semibold text-[#0f172a]">Required columns: Roll_Number, Student_Name, Max_Marks, Marks_Obtained, Attendance_Percentage, Observation</h3>
             <p className="text-[13px] font-normal text-slate-500 mt-1">Marks obtained must not exceed the row's Max_Marks. Use Yes / No for absence; leave marks empty when absent.</p>
           </div>
           <div>
@@ -94,7 +94,7 @@ export default function UploadSection({
         </div>
         <button onClick={downloadTemplate} className="mt-6 flex items-center gap-2 bg-white border border-slate-200 text-[#0f172a] font-semibold px-4 py-2.5 rounded-lg text-xs shadow-sm hover:bg-slate-50 transition">
           <ArrowDown size={16} strokeWidth={2.5} className="text-[#0f172a]" />
-          Download sample template
+          Download students list
         </button>
       </div>
 
