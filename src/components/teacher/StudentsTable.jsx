@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -10,9 +11,7 @@ import {
 } from "lucide-react";
 
 import useTeacherStore from "@/store/useTeacherStore";
-import useFilterStudentsStore from "@/store/useFilterStudentsStore";
 import Link from "next/link";
-import axios from "axios";
 
 const PAGE_SIZE = 10;
 
@@ -115,8 +114,8 @@ function AttendanceValue({ value }) {
   return (
     <span
       className={`text-[12px] ${attendance < 75
-        ? "font-semibold text-rose-700"
-        : "text-slate-600"
+          ? "font-semibold text-rose-700"
+          : "text-slate-600"
         }`}
     >
       {formatNumber(attendance)}%
@@ -124,10 +123,10 @@ function AttendanceValue({ value }) {
   );
 }
 
-function SkeletonRows() {
+function SkeletonRows({ columnCount = 7 }) {
   return Array.from({ length: PAGE_SIZE }, (_, rowIndex) => (
     <tr key={rowIndex} className="h-[48px] animate-pulse">
-      {Array.from({ length: 6 }, (_, columnIndex) => (
+      {Array.from({ length: columnCount }, (_, columnIndex) => (
         <td key={columnIndex} className="px-3 py-3">
           <div
             className={`h-3 rounded bg-slate-100 ${columnIndex === 0 ? "w-28" : "w-16"
@@ -195,29 +194,35 @@ function Pagination({ pagination, loading, onPageChange }) {
   );
 }
 
-export default function StudentsTable({ title, subtitle, categoryPage = "All", students, loading, error, setRetryCount }) {
-  let CATEGORY_OPTIONS = []
-
-  if (categoryPage == "At Risk") {
-    CATEGORY_OPTIONS = [
-      { value: "All", label: "All categories" },
-      { value: "Gradual", label: "Gradual" },
-      { value: "Attendance", label: "Low Attendace" },
-    ];
-  } else {
-    CATEGORY_OPTIONS = [
-      { value: "All", label: "All categories" },
-      { value: "Gallant", label: "Gallant" },
-      { value: "Growing", label: "Growing" },
-      { value: "Gradual", label: "Gradual" },
-    ];
-  }
-
+export default function StudentsTable({
+  title,
+  subtitle,
+  categoryPage = "All",
+  students = [],
+  loading,
+  error,
+  setRetryCount,
+}) {
   const filters = useTeacherStore((state) => state.filters);
+
+  const isPreMse = filters.assessment === "pre-mse";
 
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("All");
 
+  const CATEGORY_OPTIONS =
+    categoryPage === "At Risk"
+      ? [
+        { value: "All", label: "All categories" },
+        { value: "Gradual", label: "Gradual" },
+        { value: "Attendance", label: "Low Attendance" },
+      ]
+      : [
+        { value: "All", label: "All categories" },
+        { value: "Gallant", label: "Gallant" },
+        { value: "Growing", label: "Growing" },
+        { value: "Gradual", label: "Gradual" },
+      ];
 
   const hasRequiredFilters = Boolean(
     filters.semester &&
@@ -226,7 +231,8 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
     filters.assessment
   );
 
-  // Reset pagination when dashboard filters change.
+  const columnCount = isPreMse ? 6 : 7;
+
   useEffect(() => {
     setCurrentPage(1);
   }, [
@@ -238,26 +244,31 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
     categoryFilter,
   ]);
 
+  // Filter the students already received from the parent.
+  let filteredStudents = students;
 
-  // Filter the stored records without making another API request.
-  let filteredStudents = "";
-
-  if (categoryPage == "At Risk") {
-    if (categoryFilter === "All") filteredStudents = students;
-    else if (categoryFilter === "Gradual") filteredStudents = students.filter(student => student.three_g_category == categoryFilter);
-    else if (categoryFilter == "Attendance") {
-      filteredStudents = students.filter(student => student.attendance_pct < 75);
-    }
-  } else {
-    filteredStudents =
-      categoryFilter === "All"
-        ? students
+  if (categoryPage === "At Risk") {
+    if (categoryFilter === "Gradual") {
+      filteredStudents = students.filter(
+        (student) =>
+          student.three_g_category === "Gradual"
+      );
+    } else if (categoryFilter === "Attendance") {
+      filteredStudents = isPreMse
+        ? []
         : students.filter(
           (student) =>
-            student.three_g_category === categoryFilter
+            student.attendance_pct != null &&
+            student.attendance_pct !== "" &&
+            Number(student.attendance_pct) < 75
         );
+    }
+  } else if (categoryFilter !== "All") {
+    filteredStudents = students.filter(
+      (student) =>
+        student.three_g_category === categoryFilter
+    );
   }
-
 
   const total = filteredStudents.length;
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -300,7 +311,9 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
 
           <p className="mt-1 text-xs text-slate-500">
             {subtitle ||
-              "Student attendance and assessment performance"}
+              (isPreMse
+                ? "Student academic performance and SGPA"
+                : "Student attendance and assessment performance")}
           </p>
         </div>
 
@@ -334,7 +347,14 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
               className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-blue-400"
             >
               {CATEGORY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
+                <option
+                  key={option.value}
+                  value={option.value}
+                  disabled={
+                    isPreMse &&
+                    option.value === "Attendance"
+                  }
+                >
                   {option.label}
                 </option>
               ))}
@@ -379,14 +399,27 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
           )}
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] table-fixed">
+            <table
+              className={`w-full table-fixed ${isPreMse
+                  ? "min-w-[650px]"
+                  : "min-w-[760px]"
+                }`}
+            >
               <colgroup>
-                <col className="w-[21%]" />
-                <col className="w-[19%]" />
-                <col className="w-[10%]" />
+                <col className="w-[24%]" />
+                <col className="w-[20%]" />
                 <col className="w-[12%]" />
-                <col className="w-[10%]" />
-                <col className="w-[13%]" />
+
+                {isPreMse ? (
+                  <col className="w-[14%]" />
+                ) : (
+                  <>
+                    <col className="w-[12%]" />
+                    <col className="w-[12%]" />
+                  </>
+                )}
+
+                <col className="w-[15%]" />
                 <col className="w-[15%]" />
               </colgroup>
 
@@ -396,8 +429,9 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
                     "Student name",
                     "Roll no.",
                     "Class",
-                    "Attendance",
-                    "Marks",
+                    ...(isPreMse
+                      ? ["SGPA"]
+                      : ["Attendance", "Marks"]),
                     "3G category",
                     "Action",
                   ].map((heading) => (
@@ -413,11 +447,11 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
 
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
-                  <SkeletonRows />
+                  <SkeletonRows columnCount={columnCount} />
                 ) : error ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={columnCount}
                       className="h-48 text-center text-xs text-slate-500"
                     >
                       Unable to display student records.
@@ -425,7 +459,10 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
                   </tr>
                 ) : paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="h-48 text-center">
+                    <td
+                      colSpan={columnCount}
+                      className="h-48 text-center"
+                    >
                       <p className="text-sm font-medium text-slate-700">
                         No students found
                       </p>
@@ -440,8 +477,8 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
                     <tr
                       key={student.university_roll_no}
                       className={`h-[48px] transition-colors hover:bg-slate-50 ${student.three_g_category === "Gradual"
-                        ? "bg-rose-50/30"
-                        : ""
+                          ? "bg-rose-50/30"
+                          : ""
                         }`}
                     >
                       <td className="truncate px-3 py-2 text-[12px] font-medium text-[#263B59]">
@@ -458,21 +495,30 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
                           : "—"}
                       </td>
 
-                      <td className="px-3 py-2">
-                        <AttendanceValue
-                          value={student.attendance_pct}
-                        />
-                      </td>
+                      {isPreMse ? (
+                        <td className="px-3 py-2 text-[12px] font-medium text-slate-700">
+                          {formatNumber(student.sgpa)}
+                        </td>
+                      ) : (
+                        <>
+                          <td className="px-3 py-2">
+                            <AttendanceValue
+                              value={student.attendance_pct}
+                            />
+                          </td>
 
-                      <td className="px-3 py-2">
-                        <AssessmentBadge student={student} />
-                      </td>
+                          <td className="px-3 py-2">
+                            <AssessmentBadge student={student} />
+                          </td>
+                        </>
+                      )}
 
                       <td className="px-3 py-2">
                         <CategoryBadge
                           category={student.three_g_category}
                         />
                       </td>
+
                       <td className="px-3 py-2">
                         <Link
                           href={`/dashboard/teacher/students/${student.university_roll_no}`}
