@@ -114,8 +114,8 @@ function AttendanceValue({ value }) {
   return (
     <span
       className={`text-[12px] ${attendance < 75
-          ? "font-semibold text-rose-700"
-          : "text-slate-600"
+        ? "font-semibold text-rose-700"
+        : "text-slate-600"
         }`}
     >
       {formatNumber(attendance)}%
@@ -261,6 +261,9 @@ export default function StudentsTable({
             student.attendance_pct != null &&
             student.attendance_pct !== "" &&
             Number(student.attendance_pct) < 75
+        ).sort(
+          (a, b) =>
+            Number(a.attendance_pct) - Number(b.attendance_pct)
         );
     }
   } else if (categoryFilter !== "All") {
@@ -401,8 +404,8 @@ export default function StudentsTable({
           <div className="overflow-x-auto">
             <table
               className={`w-full table-fixed ${isPreMse
-                  ? "min-w-[650px]"
-                  : "min-w-[760px]"
+                ? "min-w-[650px]"
+                : "min-w-[760px]"
                 }`}
             >
               <colgroup>
@@ -477,8 +480,8 @@ export default function StudentsTable({
                     <tr
                       key={student.university_roll_no}
                       className={`h-[48px] transition-colors hover:bg-slate-50 ${student.three_g_category === "Gradual"
-                          ? "bg-rose-50/30"
-                          : ""
+                        ? "bg-rose-50/30"
+                        : ""
                         }`}
                     >
                       <td className="truncate px-3 py-2 text-[12px] font-medium text-[#263B59]">
