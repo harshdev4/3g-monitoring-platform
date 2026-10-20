@@ -1,9 +1,21 @@
 "use client";
 
-import { Fragment, use, useState } from "react";
+import { Fragment, use, useCallback, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Circle, FileSearchCorner } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  Circle,
+  Download,
+  Eye,
+  FileSearchCorner,
+  FileText,
+  MessageSquare,
+} from "lucide-react";
 import Header from "@/components/dashboard/Header";
+import Pill from "@/components/teacher/Pill";
+import DocumentPreviewModal from "@/components/teacher/DocumentPreviewModal";
 
 const actions = {
   1: {
@@ -29,26 +41,10 @@ const actions = {
       },
     ],
     timeline: [
-      [
-        "04 Oct",
-        "Revised evidence submitted",
-        "dbms_practice_aman_v2.pdf · Answer sheet · Under Review",
-      ],
-      [
-        "03 Oct",
-        "First submission rejected",
-        "Faculty feedback: add missing SQL query steps and rewrite normalization explanation.",
-      ],
-      [
-        "02 Oct",
-        "Activity started",
-        "Aman marked the practice sheet In Progress.",
-      ],
-      [
-        "01 Oct",
-        "Action assigned",
-        "Prof. Harsh Sharma assigned Mini-Q practice, due 10 Oct.",
-      ],
+      ["04 Oct", "Revised evidence submitted", "dbms_practice_aman_v2.pdf · Answer sheet · Under Review"],
+      ["03 Oct", "First submission rejected", "Faculty feedback: add missing SQL query steps and rewrite normalization explanation."],
+      ["02 Oct", "Activity started", "Aman marked the practice sheet In Progress."],
+      ["01 Oct", "Action assigned", "Prof. Harsh Sharma assigned Mini-Q practice, due 10 Oct."],
     ],
   },
   2: {
@@ -64,25 +60,13 @@ const actions = {
     file: "",
     submitted: "",
     purpose: "build confidence in core DBMS topics",
-    context:
-      "Assigned to support foundational concepts and improve assessment performance.",
+    context: "Assigned to support foundational concepts and improve assessment performance.",
     requirements: [
-      {
-        title: "Attend the scheduled remedial DBMS classes",
-        detail: "Submit attendance and completion proof.",
-      },
+      { title: "Attend the scheduled remedial DBMS classes", detail: "Submit attendance and completion proof." },
     ],
     timeline: [
-      [
-        "02 Oct",
-        "Activity started",
-        "Karan started the remedial DBMS activity.",
-      ],
-      [
-        "01 Oct",
-        "Action assigned",
-        "Prof. Harsh Sharma assigned the activity, due 12 Oct.",
-      ],
+      ["02 Oct", "Activity started", "Karan started the remedial DBMS activity."],
+      ["01 Oct", "Action assigned", "Prof. Harsh Sharma assigned the activity, due 12 Oct."],
     ],
   },
   3: {
@@ -98,20 +82,12 @@ const actions = {
     file: "",
     submitted: "",
     purpose: "apply SQL concepts to a practical case",
-    context:
-      "An enrichment activity to strengthen database design and query writing.",
+    context: "An enrichment activity to strengthen database design and query writing.",
     requirements: [
-      {
-        title: "Complete the SQL case study",
-        detail: "Submit the project document with queries and outputs.",
-      },
+      { title: "Complete the SQL case study", detail: "Submit the project document with queries and outputs." },
     ],
     timeline: [
-      [
-        "01 Oct",
-        "Action assigned",
-        "Prof. Harsh Sharma assigned the case study, due 14 Oct.",
-      ],
+      ["01 Oct", "Action assigned", "Prof. Harsh Sharma assigned the case study, due 14 Oct."],
     ],
   },
   4: {
@@ -127,25 +103,13 @@ const actions = {
     file: "advanced_database_project.pdf",
     submitted: "05 Oct 2026, 11:40 IST",
     purpose: "extend database design and implementation skills",
-    context:
-      "An advanced project exploring practical database design and implementation.",
+    context: "An advanced project exploring practical database design and implementation.",
     requirements: [
-      {
-        title: "Complete the advanced database project",
-        detail: "Submit the project document and implementation evidence.",
-      },
+      { title: "Complete the advanced database project", detail: "Submit the project document and implementation evidence." },
     ],
     timeline: [
-      [
-        "05 Oct",
-        "Evidence submitted",
-        "Project document is awaiting faculty review.",
-      ],
-      [
-        "01 Oct",
-        "Action assigned",
-        "Prof. Harsh Sharma assigned the project, due 16 Oct.",
-      ],
+      ["05 Oct", "Evidence submitted", "Project document is awaiting faculty review."],
+      ["01 Oct", "Action assigned", "Prof. Harsh Sharma assigned the project, due 16 Oct."],
     ],
   },
   5: {
@@ -162,21 +126,11 @@ const actions = {
     submitted: "28 Sep 2026, 16:10 IST",
     purpose: "encourage active participation in subject seminars",
     context: "Participation in a DBMS seminar activity.",
-    requirements: [
-      { title: "Attend the seminar", detail: "Submit participation proof." },
-    ],
+    requirements: [{ title: "Attend the seminar", detail: "Submit participation proof." }],
     timeline: [
-      [
-        "29 Sep",
-        "Evidence approved",
-        "Participation evidence verified by faculty.",
-      ],
+      ["29 Sep", "Evidence approved", "Participation evidence verified by faculty."],
       ["28 Sep", "Evidence submitted", "Aman submitted participation proof."],
-      [
-        "20 Sep",
-        "Action assigned",
-        "Prof. Harsh Sharma assigned seminar participation.",
-      ],
+      ["20 Sep", "Action assigned", "Prof. Harsh Sharma assigned seminar participation."],
     ],
   },
   6: {
@@ -193,24 +147,11 @@ const actions = {
     submitted: "03 Oct 2026, 13:05 IST",
     purpose: "reinforce SQL query writing",
     context: "A focused revision activity covering core SQL concepts.",
-    requirements: [
-      {
-        title: "Complete the SQL revision worksheet",
-        detail: "Show the working for each answer.",
-      },
-    ],
+    requirements: [{ title: "Complete the SQL revision worksheet", detail: "Show the working for each answer." }],
     timeline: [
-      [
-        "03 Oct",
-        "Submission rejected",
-        "Faculty requested clearer working for the query answers.",
-      ],
+      ["03 Oct", "Submission rejected", "Faculty requested clearer working for the query answers."],
       ["02 Oct", "Evidence submitted", "Pooja submitted the answer sheet."],
-      [
-        "25 Sep",
-        "Action assigned",
-        "Prof. Harsh Sharma assigned the revision worksheet.",
-      ],
+      ["25 Sep", "Action assigned", "Prof. Harsh Sharma assigned the revision worksheet."],
     ],
   },
   7: {
@@ -226,430 +167,367 @@ const actions = {
     file: "",
     submitted: "",
     purpose: "reinforce core algorithm design concepts",
-    context:
-      "A guided recap to support progress in Design and Analysis of Algorithms.",
-    requirements: [
-      {
-        title: "Complete the assigned concept recap",
-        detail: "Meet with faculty and confirm completion.",
-      },
-    ],
+    context: "A guided recap to support progress in Design and Analysis of Algorithms.",
+    requirements: [{ title: "Complete the assigned concept recap", detail: "Meet with faculty and confirm completion." }],
     timeline: [
-      [
-        "01 Oct",
-        "Reminder due",
-        "The activity has passed its due date and needs follow-up.",
-      ],
-      [
-        "22 Sep",
-        "Action assigned",
-        "Prof. Harsh Sharma assigned the concept recap.",
-      ],
+      ["01 Oct", "Reminder due", "The activity has passed its due date and needs follow-up."],
+      ["22 Sep", "Action assigned", "Prof. Harsh Sharma assigned the concept recap."],
     ],
   },
 };
-
-const statusStyles = {
-  Assigned: { pill: "bg-amber-50 text-amber-700", dot: "bg-amber-500" },
-  "In Progress": { pill: "bg-blue-50 text-blue-700", dot: "bg-blue-600" },
-  "Evidence Submitted": {
-    pill: "bg-blue-50 text-blue-700",
-    dot: "bg-blue-600",
-  },
-  "Under Review": { pill: "bg-blue-50 text-blue-700", dot: "bg-blue-600" },
-  Approved: { pill: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
-  Rejected: { pill: "bg-rose-50 text-rose-700", dot: "bg-rose-500" },
-  Overdue: { pill: "bg-red-50 text-red-700", dot: "bg-red-500" },
-};
-
-const categoryStyles = {
-  Gradual: { pill: "bg-rose-50 text-rose-700", dot: "bg-rose-500" },
-  Growing: { pill: "bg-amber-50 text-amber-700", dot: "bg-amber-500" },
-  Gallant: { pill: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
-};
-
-const fallbackStyle = {
-  pill: "bg-slate-100 text-slate-600",
-  dot: "bg-slate-400",
-};
-
-const LATEST_FEEDBACK =
-  "Review version 2 against the requested corrections. Approve only when the query steps and normalization reasoning are complete.";
-
-const progressGroups = [
-  {
-    steps: [
-      { label: "Practice completed", done: true },
-      { label: "Answer sheet uploaded", done: true },
-    ],
-    detail: "Student completed the questions and submitted version 2 for review.",
-  },
-  {
-    steps: [
-      { label: "Revised submission", done: true },
-      { label: "Approval pending", done: false },
-    ],
-    detail:
-      "Version 1 was rejected for missing query steps. Faculty must verify the revised work.",
-  },
-];
 
 const cardClass = "rounded-lg border border-[#E5EAF1] bg-white p-5";
 const cardTitle = "text-base font-semibold text-[#102746]";
-const outlineButton =
-  "inline-flex h-9 items-center justify-center rounded-md border border-[#DCE3EC] bg-white px-4 text-xs font-medium text-[#102746] hover:bg-[#F8FAFC]";
-
-function Pill({ label, style = fallbackStyle }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${style.pill}`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
-      {label}
-    </span>
-  );
-}
+const outlineButton = "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-[#DCE3EC] bg-white px-3.5 py-2 text-xs font-medium text-[#102746] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50";
+const primaryButton = "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md bg-[#2563EB] px-3.5 py-2 text-xs font-medium text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50";
 
 function Notice({ notice, card }) {
   if (notice?.card !== card) return null;
-  return <p className="mt-3 text-[11px] text-[#2563EB]">{notice.text}</p>;
+  return <p role="status" className="mt-3 text-xs text-[#2563EB]">{notice.text}</p>;
 }
 
-export default function ActionDetailPage({ params }) {
-  const { id } = use(params);
-  const action = actions[id] || actions[1];
-  const [notice, setNotice] = useState(null);
+function getSeedNote(action) {
+  if (action.status === "Rejected") {
+    return "Please clarify the working for each SQL query and resubmit the corrected answers.";
+  }
+  if (action.status === "Approved") {
+    return "Evidence checked and approved. Keep a copy for your academic record.";
+  }
+  if (action.status === "Evidence Submitted") {
+    return "Evidence received. Review the project document and implementation details before approval.";
+  }
+  return "Review the submission against the requested corrections. Approve only when all required steps are complete.";
+}
 
-  const notify = (card, text) => setNotice({ card, text });
+function createInitialNotes(action) {
+  return [
+    {
+      id: "initial",
+      author: "Prof. Harsh Sharma",
+      timestamp: action.submitted || "01 Oct 2026",
+      text: getSeedNote(action),
+    },
+  ];
+}
+
+const formatNow = () =>
+  new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+
+// All page state lives here. The default export below renders this with
+// key={id}, so opening a different action remounts it with fresh state.
+function ActionDetail({ id, action }) {
+  const [currentStatus, setCurrentStatus] = useState(action.status);
+  const [notice, setNotice] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [newNote, setNewNote] = useState("");
+  const [facultyNotes, setFacultyNotes] = useState(() => createInitialNotes(action));
+
+  const closePreview = useCallback(() => setPreviewOpen(false), []);
+
+  const evidenceUrl = action.file
+    ? `/sample-documents/${encodeURIComponent(action.file)}`
+    : null;
   const canReview =
-    action.status === "Under Review" || action.status === "Evidence Submitted";
-  const percent = canReview
-    ? 75
-    : action.status === "Approved"
+    Boolean(action.file) &&
+    (currentStatus === "Under Review" || currentStatus === "Evidence Submitted");
+  const percent =
+    currentStatus === "Approved"
       ? 100
-      : action.status === "In Progress"
-        ? 25
-        : 0;
+      : currentStatus === "Rejected" || currentStatus === "Revision Requested"
+        ? 50
+        : currentStatus === "Under Review" || currentStatus === "Evidence Submitted"
+          ? 75
+          : currentStatus === "In Progress"
+            ? 25
+            : 0;
+  const progressText =
+    currentStatus === "Approved"
+      ? "4 of 4 steps · Approved"
+      : currentStatus === "Revision Requested"
+        ? "2 of 4 steps · Revision requested"
+        : currentStatus === "Rejected"
+          ? "2 of 4 steps · Rejected"
+          : currentStatus === "Under Review" || currentStatus === "Evidence Submitted"
+            ? "3 of 4 steps · Awaiting faculty review"
+            : currentStatus === "In Progress"
+              ? "1 of 4 steps · Student activity in progress"
+              : `${Math.round(percent / 25)} of 4 steps · ${currentStatus}`;
+
+  // Called by DocumentPreviewModal when the teacher picks a decision.
+  const handleDecision = ({ status, note }) => {
+    setCurrentStatus(status);
+    setFacultyNotes((previous) => [
+      {
+        id: `${Date.now()}-${status}`,
+        author: "Prof. Harsh Sharma",
+        timestamp: formatNow(),
+        text: note
+          ? `${status}: ${note}`
+          : `Evidence approved for ${action.title}. The submission meets the requirements.`,
+      },
+      ...previous,
+    ]);
+    setNotice({
+      card: "evidence",
+      text: `Demo status updated to “${status}”. Connect this handler to your API to persist the decision.`,
+    });
+  };
+
+  const addFacultyNote = (event) => {
+    event.preventDefault();
+    const text = newNote.trim();
+    if (!text) {
+      setNotice({ card: "notes", text: "Enter a note before adding it." });
+      return;
+    }
+
+    setFacultyNotes((previous) => [
+      {
+        id: `${Date.now()}-note`,
+        author: "Prof. Harsh Sharma",
+        timestamp: formatNow(),
+        text,
+      },
+      ...previous,
+    ]);
+    setNewNote("");
+    setNotice({ card: "notes", text: "Faculty note added to this demo view." });
+  };
+
+  const stageItems = [
+    { label: "Action assigned", done: true },
+    { label: "Student activity", done: ["In Progress", "Evidence Submitted", "Under Review", "Revision Requested", "Approved", "Rejected"].includes(currentStatus) },
+    { label: "Evidence received", done: Boolean(action.file) },
+    { label: "Faculty approval", done: currentStatus === "Approved" },
+  ];
 
   return (
     <>
       <Header />
       <main className="mx-auto max-w-[1500px] space-y-4 p-4 sm:p-5 lg:p-6">
-        {/* Page header */}
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px] text-[#71809A]">
-              <Link href="/dashboard/teacher" className="hover:text-[#2563EB]">
-                Teacher workspace
-              </Link>
+              <Link href="/dashboard/teacher" className="hover:text-[#2563EB]">Teacher workspace</Link>
               <span>/</span>
-              <Link
-                href="/dashboard/teacher/actions"
-                className="hover:text-[#2563EB]"
-              >
-                Activities / Actions
-              </Link>
+              <Link href="/dashboard/teacher/actions" className="hover:text-[#2563EB]">Activities / Actions</Link>
               <span>/</span>
-              <span className="font-medium text-[#52627A]">
-                ACT-2026-{String(Number(id) + 17).padStart(3, "0")}
-              </span>
+              <span className="font-medium text-[#52627A]">ACT-2026-{String(Number(id) + 17).padStart(3, "0")}</span>
             </div>
-            <h1 className="text-2xl font-semibold text-[#102746]">
-              {action.title}
-            </h1>
+            <h1 className="text-2xl font-semibold text-[#102746]">{action.title}</h1>
             <p className="mt-1 text-xs text-[#71809A]">
-              {action.subject} · {action.category} · Assigned to{" "}
-              {action.student} · Due {action.due}
+              {action.subject} · {action.category} · Assigned to {action.student} · Due {action.due}
             </p>
           </div>
-          <button className="inline-flex h-9 items-center rounded-md bg-[#2563EB] px-4 text-xs font-medium text-white hover:bg-[#1D4ED8]">
-            Edit action
-          </button>
+          <Link href="/dashboard/teacher/actions" className={outlineButton}>
+            <ArrowLeft size={14} /> Back to actions
+          </Link>
         </div>
 
-        {/* Review banner */}
-        {action.status === "Under Review" && (
-          <section className="mt-3 flex items-start gap-2 rounded-md border-l-2 border-[#2563EB] bg-[#EEF5FF] p-4">
+        {canReview && (
+          <section className="flex items-start gap-2 rounded-md border-l-2 border-[#2563EB] bg-[#EEF5FF] p-4">
             <FileSearchCorner size={16} className="mt-0.5 shrink-0 text-blue-600" />
             <div>
-              <h2 className="text-[13px] font-semibold text-blue-700">
-                Evidence is ready for review
-              </h2>
+              <h2 className="text-[13px] font-semibold text-blue-700">Evidence is ready for review</h2>
               <p className="mt-0.5 text-xs leading-5 text-[#52627A]">
-                {action.student} submitted the revised answer sheet on 04 Oct.
-                Approval is required before this action is complete.
+                {action.student} submitted {action.evidence.toLowerCase()}
+                {action.submitted ? ` on ${action.submitted}` : ""}. Open the document to review it and record a faculty decision.
               </p>
             </div>
           </section>
         )}
 
-        {/* Row 1: requirements + progress */}
         <section className="grid items-start gap-4 lg:grid-cols-2">
           <div className={cardClass}>
             <h2 className={cardTitle}>Action requirements</h2>
-
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Pill label={action.status} style={statusStyles[action.status]} />
-              <Pill
-                label={action.category}
-                style={categoryStyles[action.category]}
-              />
+              <Pill label={currentStatus} />
+              <Pill label={action.category} />
             </div>
 
             <div className="mt-5 space-y-5">
               <div>
-                <h3 className="text-[15px] font-semibold text-[#102746]">
-                  Purpose: {action.purpose}
-                </h3>
-                <p className="mt-1 text-[13px] leading-5 text-[#71809A]">
-                  {action.context}
-                </p>
+                <h3 className="text-[15px] font-semibold text-[#102746]">Purpose: {action.purpose}</h3>
+                <p className="mt-1 text-[13px] leading-5 text-[#71809A]">{action.context}</p>
               </div>
-
               {action.requirements.map(({ title, detail }) => (
                 <div key={title}>
-                  <h3 className="text-[15px] font-semibold text-[#102746]">
-                    {title}
-                  </h3>
-                  <p className="mt-1 text-[13px] leading-5 text-[#71809A]">
-                    {detail}
-                  </p>
+                  <h3 className="text-[15px] font-semibold text-[#102746]">{title}</h3>
+                  <p className="mt-1 text-[13px] leading-5 text-[#71809A]">{detail}</p>
                 </div>
               ))}
-
               <div>
-                <h3 className="text-[15px] font-semibold text-[#102746]">
-                  Evidence required: {action.evidence.toLowerCase()}
-                </h3>
+                <h3 className="text-[15px] font-semibold text-[#102746]">Evidence required: {action.evidence.toLowerCase()}</h3>
                 <p className="mt-1 text-[13px] leading-5 text-[#71809A]">
-                  PDF or clear JPG/PNG · Up to 10 MB · All pages in order,
-                  legible and complete.
+                  PDF or clear JPG/PNG · Up to 10 MB · All pages in order, legible and complete.
                 </p>
               </div>
-
-              <p className="text-xs text-[#71809A]">
-                Faculty: Prof. Harsh Sharma · Assigned 01 Oct · Due {action.due}
-                , 23:59 IST
-              </p>
+              <p className="text-xs text-[#71809A]">Faculty: Prof. Harsh Sharma · Assigned 01 Oct · Due {action.due}, 23:59 IST</p>
             </div>
           </div>
 
           <div className={cardClass}>
             <h2 className={cardTitle}>Progress &amp; completion</h2>
-
             <div className="mt-4 flex items-center justify-between text-xs">
-              <span className="font-semibold text-[#102746]">
-                Requirements completed
-              </span>
+              <span className="font-semibold text-[#102746]">Requirements completed</span>
               <span className="text-[#52627A]">{percent}%</span>
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#EEF1F5]">
-              <div
-                className="h-full rounded-full bg-[#2563EB]"
-                style={{ width: `${percent}%` }}
-              />
+              <div className="h-full rounded-full bg-[#2563EB] transition-all duration-300" style={{ width: `${percent}%` }} />
             </div>
-            <p className="mt-2 text-[11px] text-[#71809A]">
-              {percent === 75
-                ? "3 of 4 steps · Awaiting faculty approval"
-                : percent === 100
-                  ? "4 of 4 steps · Approved"
-                  : `${Math.round(percent / 25)} of 4 steps · ${action.status}`}
-            </p>
+            <p className="mt-2 text-[11px] text-[#71809A]">{progressText}</p>
 
             <div className="mt-5 space-y-4">
-              {progressGroups.map(({ steps, detail }) => (
-                <div key={steps[0].label}>
-                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-semibold text-[#102746]">
-                    {steps.map((step, index) => (
-                      <Fragment key={step.label}>
-                        {index > 0 && (
-                          <span className="text-[#8A98AB]">·</span>
-                        )}
-                        <span className="inline-flex items-center gap-1">
-                          {step.done ? (
-                            <Check
-                              size={13}
-                              strokeWidth={3}
-                              className="text-[#10B981]"
-                            />
-                          ) : (
-                            <Circle size={11} className="text-[#71809A]" />
-                          )}
-                          {step.label}
-                        </span>
-                      </Fragment>
-                    ))}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-[#71809A]">
-                    {detail}
-                  </p>
-                </div>
-              ))}
+              <div>
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-semibold text-[#102746]">
+                  {stageItems.map((step, index) => (
+                    <Fragment key={step.label}>
+                      {index > 0 && <span className="text-[#8A98AB]">·</span>}
+                      <span className="inline-flex items-center gap-1">
+                        {step.done ? <Check size={13} strokeWidth={3} className="text-emerald-500" /> : <Circle size={11} className="text-[#71809A]" />}
+                        {step.label}
+                      </span>
+                    </Fragment>
+                  ))}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-[#71809A]">
+                  {currentStatus === "Approved"
+                    ? "Faculty approval is complete."
+                    : currentStatus === "Revision Requested" || currentStatus === "Rejected"
+                      ? "The student needs to review the faculty feedback and provide an updated submission."
+                      : canReview
+                        ? "Evidence is available for faculty review."
+                        : "Progress updates appear here as this action moves through its workflow."}
+                </p>
+              </div>
             </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {canReview && (
-                <Link
-                  href="/dashboard/teacher/evidence"
-                  className="inline-flex h-9 items-center rounded-md bg-[#2563EB] px-4 text-xs font-medium text-white hover:bg-[#1D4ED8]"
-                >
-                  Review Evidence
-                </Link>
-              )}
-              <button
-                onClick={() =>
-                  notify("progress", `Reminder sent to ${action.student}.`)
-                }
-                className={outlineButton}
-              >
-                Send reminder
-              </button>
-            </div>
-            <Notice notice={notice} card="progress" />
+            {canReview && (
+              <div className="mt-5">
+                <button type="button" onClick={() => setPreviewOpen(true)} className={primaryButton}>
+                  Review evidence <Eye size={14} />
+                </button>
+              </div>
+            )}
           </div>
         </section>
 
-        {/* Row 2: assigned students */}
         <section className={cardClass}>
-          <h2 className={cardTitle}>Assigned students</h2>
+          <h2 className={cardTitle}>Assigned student</h2>
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left">
+            <table className="w-full min-w-[640px] text-left">
               <thead className="bg-[#F8FAFC] [&>tr>th:first-child]:rounded-l-md [&>tr>th:last-child]:rounded-r-md">
                 <tr>
-                  {[
-                    "Student",
-                    "Roll",
-                    "Class",
-                    "Subject category",
-                    "Due date",
-                    "Evidence",
-                    "Status",
-                  ].map((heading) => (
-                    <th
-                      key={heading}
-                      className="px-4 py-3 text-xs font-medium text-[#52627A]"
-                    >
-                      {heading}
-                    </th>
+                  {["Student", "Roll", "Class", "Subject / category", "Due date", "Evidence", "Status"].map((heading) => (
+                    <th key={heading} className="px-4 py-3 text-xs font-medium text-[#52627A]">{heading}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b border-[#EEF1F5]">
-                  <td className="px-4 py-4 text-[13px] text-[#102746]">
-                    {action.student}
-                  </td>
-                  <td className="px-4 py-4 text-[13px] text-[#102746]">
-                    {action.roll}
-                  </td>
-                  <td className="px-4 py-4 text-[13px] text-[#102746]">
-                    {action.className}
-                  </td>
+                  <td className="px-4 py-4 text-[13px] text-[#102746]">{action.student}</td>
+                  <td className="px-4 py-4 text-[13px] text-[#102746]">{action.roll}</td>
+                  <td className="px-4 py-4 text-[13px] text-[#102746]">{action.className}</td>
                   <td className="px-4 py-4">
-                    <Pill
-                      label={action.category}
-                      style={categoryStyles[action.category]}
-                    />
+                    <div className="flex flex-col items-start gap-1">
+                      <span className="text-[13px] text-[#102746]">{action.subject}&nbsp;&nbsp;<Pill label={action.category} /></span>
+                    </div>
                   </td>
-                  <td className="px-4 py-4 text-[13px] text-[#102746]">
-                    {action.due}
-                  </td>
-                  <td className="px-4 py-4 text-[13px] text-[#102746]">
-                    {action.evidence}
-                    {action.file && " · v2"}
-                  </td>
-                  <td className="px-4 py-4">
-                    <Pill
-                      label={action.status}
-                      style={statusStyles[action.status]}
-                    />
-                  </td>
+                  <td className="px-4 py-4 text-[13px] text-[#102746]">{action.due}</td>
+                  <td className="px-4 py-4 text-[13px] text-[#102746]">{action.file ? action.evidence : "Not submitted"}</td>
+                  <td className="px-4 py-4"><Pill label={currentStatus} /></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        {/* Row 3: timeline + evidence notes */}
         <section className="grid items-start gap-4 lg:grid-cols-2">
           <div className={cardClass}>
             <h2 className={cardTitle}>Activity timeline</h2>
             <div className="mt-4 space-y-4">
               {action.timeline.map(([date, title, detail]) => (
-                <div key={`${date}-${title}`}>
-                  <p className="text-[13px] font-semibold text-[#102746]">
-                    {date} · {title}
-                  </p>
-                  <p className="mt-0.5 text-xs leading-5 text-[#71809A]">
-                    {detail}
-                  </p>
+                <div key={`${date}-${title}`} className="border-l-2 border-[#E5EAF1] pl-3">
+                  <p className="text-[13px] font-semibold text-[#102746]">{date} · {title}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-[#71809A]">{detail}</p>
                 </div>
               ))}
             </div>
           </div>
 
           <div className={cardClass}>
-            <h2 className={cardTitle}>Evidence &amp; faculty notes</h2>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <h2 className={cardTitle}>Evidence &amp; faculty notes</h2>
+                <p className="mt-1 text-xs text-[#71809A]">Review the uploaded sample file and record the decision or feedback.</p>
+              </div>
+              {action.file && <Pill label="Sample document" showDot={false} shape="md" />}
+            </div>
 
             <div className="mt-4 space-y-5">
-              {action.file ? (
-                <div>
-                  <p className="text-[13px] font-semibold text-[#102746]">
-                    Current file: {action.file}
-                  </p>
-                  <p className="mt-0.5 text-xs text-[#71809A]">
-                    1.8 MB · 4 pages · Submitted {action.submitted}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      onClick={() =>
-                        notify(
-                          "evidence",
-                          "Preview is unavailable for this sample file.",
-                        )
-                      }
-                      className={outlineButton}
-                    >
-                      Preview submission
-                    </button>
-                    <button
-                      onClick={() =>
-                        notify(
-                          "evidence",
-                          "The sample file is not attached to this workspace.",
-                        )
-                      }
-                      className={outlineButton}
-                    >
-                      Download
-                    </button>
+              {action.file && evidenceUrl ? (
+                <div className="rounded-lg border border-[#E5EAF1] p-3.5">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-700"><FileText size={18} /></span>
+                    <div className="min-w-0 flex-1">
+                      <p className="break-all text-[13px] font-semibold text-[#102746]">{action.file}</p>
+                      <p className="mt-1 text-xs leading-5 text-[#71809A]">
+                        {action.evidence} · {action.submitted ? `Submitted ${action.submitted}` : "Sample evidence"}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setPreviewOpen(true)} className={primaryButton}>
+                          <Eye size={14} /> {canReview ? "Review & decide" : "Preview document"}
+                        </button>
+                        <a href={evidenceUrl} download={action.file} className={outlineButton}>
+                          <Download size={14} /> Download
+                        </a>
+                      </div>
+                      <Notice notice={notice} card="evidence" />
+                    </div>
                   </div>
-                  <Notice notice={notice} card="evidence" />
                 </div>
               ) : (
-                <p className="rounded-md bg-[#F8FAFC] p-3 text-xs text-[#71809A]">
-                  No evidence submitted yet.
-                </p>
+                <p className="rounded-md bg-[#F8FAFC] p-3 text-xs leading-5 text-[#71809A]">No evidence submitted yet. Preview, download, and review controls will become available when a document is attached.</p>
               )}
 
-              <div>
-                <h3 className="text-[13px] font-semibold text-[#102746]">
-                  Latest feedback
-                </h3>
-                <p className="mt-0.5 text-xs leading-5 text-[#71809A]">
-                  {LATEST_FEEDBACK}
-                </p>
+              {!canReview && (currentStatus === "Approved" || currentStatus === "Rejected" || currentStatus === "Revision Requested") && (
+                <div className="flex items-start gap-2 rounded-md bg-slate-50 p-3 text-xs text-slate-600">
+                  {currentStatus === "Approved" ? <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-600" /> : <MessageSquare size={15} className="mt-0.5 shrink-0 text-amber-600" />}
+                  <p>{currentStatus === "Approved" ? "This evidence has been marked as approved in the current demo session." : `This item is marked “${currentStatus}”. Add faculty notes below to document the next steps.`}</p>
+                </div>
+              )}
+
+              <div className="border-t border-[#EEF1F5] pt-4">
+                <h3 className="text-[13px] font-semibold text-[#102746]">Add faculty note</h3>
+                <form onSubmit={addFacultyNote} className="mt-2 space-y-2">
+                  <textarea
+                    value={newNote}
+                    onChange={(event) => setNewNote(event.target.value)}
+                    rows={3}
+                    maxLength={1000}
+                    placeholder="Write specific feedback, corrections, or next steps..."
+                    className="w-full resize-y rounded-md border border-[#DCE3EC] px-3 py-2 text-xs leading-5 text-[#102746] outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  />
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[10px] text-[#8A98AB]">{newNote.length}/1000 characters</span>
+                    <button type="submit" className={outlineButton}><MessageSquare size={14} /> Add note</button>
+                  </div>
+                </form>
+                <Notice notice={notice} card="notes" />
               </div>
 
               <div>
-                <h3 className="text-[13px] font-semibold text-[#102746]">
-                  Next academic checkpoint
-                </h3>
-                <p className="mt-0.5 text-xs leading-5 text-[#71809A]">
-                  Target ≥ 40% DBMS marks. Record outcome after the remedial
-                  assessment.
-                </p>
+                <h3 className="text-[13px] font-semibold text-[#102746]">Faculty note history</h3>
+                <div className="mt-3 space-y-3">
+                  {facultyNotes.map((note) => (
+                    <article key={note.id} className="rounded-md bg-[#F8FAFC] p-3">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                        <p className="text-xs font-semibold text-[#102746]">{note.author}</p>
+                        <time className="text-[10px] text-[#8A98AB]">{note.timestamp}</time>
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[#52627A]">{note.text}</p>
+                    </article>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -657,15 +535,29 @@ export default function ActionDetailPage({ params }) {
 
         <footer className="flex flex-wrap items-center justify-between gap-2 pb-2 text-[10px] text-[#8A98AB]">
           <span>3G · Academic insights updated 05 Oct 2026, 09:30 IST</span>
-          <Link
-            href="/dashboard/teacher/actions"
-            className="inline-flex items-center gap-1 hover:text-[#2563EB]"
-          >
-            <ArrowLeft size={12} />
-            Back to Activities / Actions
+          <Link href="/dashboard/teacher/actions" className="inline-flex items-center gap-1 hover:text-[#2563EB]">
+            <ArrowLeft size={12} /> Back to Activities / Actions
           </Link>
         </footer>
       </main>
+
+      <DocumentPreviewModal
+        open={previewOpen}
+        onClose={closePreview}
+        documentUrl={evidenceUrl}
+        fileName={action.file}
+        title={action.title}
+        status={currentStatus}
+        canReview={canReview}
+        onDecision={handleDecision}
+      />
     </>
   );
+}
+
+export default function ActionDetailPage({ params }) {
+  const { id } = use(params);
+  const action = actions[id] || actions[1];
+
+  return <ActionDetail key={id} id={id} action={action} />;
 }

@@ -1,297 +1,382 @@
 "use client";
 
-import { useEffect, useRef, useState, memo } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import Pill from "@/components/teacher/Pill";
+import {
+  ASSESSMENTS,
+  CATEGORIES,
+  POLICY_ACTIONS,
+} from "@/constants/threeGPolicy";
 
-const CATEGORIES = ["Gradual", "Growing", "Gallant"];
+const CUSTOM = "__custom__";
 
-const CATEGORY_HINTS = {
-  Gradual: "Students who need support",
-  Growing: "Students showing progress",
-  Gallant: "Top performers",
-};
-
-const labelClass = "block text-[11px] font-medium text-[#52627A]";
 const fieldClass =
-  "mt-1 h-9 w-full rounded-md border border-[#DCE3EC] bg-white px-2.5 text-xs text-[#253B59] outline-none transition-colors focus:border-[#2563EB]";
+  "h-9 w-full rounded-md border border-[#DCE3EC] bg-white px-3 text-xs outline-none focus:border-[#2563EB]";
+const labelClass = "mb-1 block text-xs font-medium text-[#52627A]";
 
-// YYYY-MM-DD in the user's local timezone.
-const todayISO = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+function OwnerBadge({ owner }) {
+  const styles =
+    owner === "Teacher"
+      ? "bg-[#EEF4FF] text-[#2563EB]"
+      : "bg-[#ECFDF5] text-[#059669]";
+  return (
+    <span
+      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${styles}`}
+    >
+      {owner}
+    </span>
+  );
+}
 
-const createInitialForm = (sections, subjects) => ({
-  category: CATEGORIES[0],
-  section: sections[0],
-  subject: subjects[0],
-  activity: "",
-  evidence: "",
-  due: "",
-});
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <span className={labelClass}>{label}</span>
+      {children}
+    </label>
+  );
+}
 
-// Increased to 300ms to allow the custom cubic-bezier to feel smooth
-const ANIMATION_MS = 300;
+function ChoiceRow({ selected, onClick, children }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onClick}
+      className={`flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-xs ${
+        selected
+          ? "border-[#2563EB] bg-[#EEF4FF] text-[#102746]"
+          : "border-[#E5EAF1] bg-white text-[#334155] hover:bg-[#F8FAFC]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
-export default memo(function AssignActionModal({
-  isOpen,
-  sections,
-  subjects,
-  onSubmit,
-  onClose,
-}) {
-  const [form, setForm] = useState(() => createInitialForm(sections, subjects));
-  const [shouldRender, setShouldRender] = useState(Boolean(isOpen));
-  const [isVisible, setIsVisible] = useState(false);
-  const dialogRef = useRef(null);
-
-  // Keep the modal mounted during closing so the exit transition can finish.
-  useEffect(() => {
-    let firstFrame;
-    let secondFrame;
-    let closeTimer;
-
-    if (isOpen) {
-      setShouldRender(true);
-      firstFrame = window.requestAnimationFrame(() => {
-        // Two frames ensure the hidden starting styles have been painted.
-        secondFrame = window.requestAnimationFrame(() => setIsVisible(true));
-      });
-    } else {
-      setIsVisible(false);
-      closeTimer = window.setTimeout(() => {
-        setShouldRender(false);
-      }, ANIMATION_MS + 30);
-    }
-
-    return () => {
-      if (firstFrame) window.cancelAnimationFrame(firstFrame);
-      if (secondFrame) window.cancelAnimationFrame(secondFrame);
-      if (closeTimer) window.clearTimeout(closeTimer);
-    };
-  }, [isOpen]);
-
-  // Lock page scrolling for the entire time the modal is rendered, including exit.
-  useEffect(() => {
-    if (!shouldRender) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [shouldRender]);
-
-  // Escape closes only an actively open modal, not one already animating out.
-  useEffect(() => {
-    if (!shouldRender || !isOpen) return;
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, shouldRender, onClose]);
+// Mounted only while the modal is open, so the form resets every time.
+function Form({ sections, subjects, onSubmit, onClose }) {
+  const [category, setCategory] = useState("");
+  const [choice, setChoice] = useState("");
+  const [customTitle, setCustomTitle] = useState("");
+  const [performedBy, setPerformedBy] = useState("Student");
+  const [section, setSection] = useState("");
+  const [courseCode, setCourseCode] = useState("");
+  const [assessmentType, setAssessmentType] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [evidence, setEvidence] = useState("");
+  const [steps, setSteps] = useState(1);
+  const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
-    if (isOpen && shouldRender) dialogRef.current?.focus();
-  }, [isOpen, shouldRender]);
+    const onKey = (event) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
-  // Reset the form on every opening, since the modal now stays mounted in its parent.
-  useEffect(() => {
-    if (isOpen) setForm(createInitialForm(sections, subjects));
-  }, [isOpen, sections, subjects]);
+  const policyActions = category ? POLICY_ACTIONS[category] : [];
+  const isCustom = choice === CUSTOM;
+  const selected = policyActions.find((a) => a.title === choice);
+  const subject = subjects.find((s) => s.code === courseCode);
 
-  const update = (field) => (event) =>
-    setForm((current) => ({ ...current, [field]: event.target.value }));
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    onSubmit(form);
+  const pickCategory = (next) => {
+    setCategory(next);
+    setChoice("");
+    setPerformedBy("Student");
+    setEvidence("");
+    setSteps(1);
   };
 
-  const audience =
-    form.section === sections[0] &&
-    sections[0].toLowerCase().startsWith("all")
-      ? "all your sections"
-      : form.section;
+  const pickAction = (action) => {
+    setChoice(action.title);
+    setPerformedBy(action.owner);
+    setEvidence(action.evidence);
+    setSteps(action.steps);
+  };
 
-  if (!shouldRender) return null;
+  const pickCustom = () => {
+    setChoice(CUSTOM);
+    setEvidence("");
+    setSteps(1);
+  };
+
+  const title = isCustom ? customTitle.trim() : (selected?.title ?? "");
+  const canSubmit =
+    category &&
+    title &&
+    section &&
+    subject &&
+    assessmentType &&
+    dueDate &&
+    Number(steps) >= 1 &&
+    !submitting;
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      await onSubmit({
+        activity: title,
+        isCustom,
+        category,
+        performedBy,
+        section,
+        subject: subject.name,
+        courseCode: subject.code,
+        assessmentType,
+        dueDate,
+        evidenceRequired: evidence.trim(),
+        totalSteps: Number(steps),
+        description: description.trim(),
+      });
+    } catch (err) {
+      setSubmitError(err.message || "Could not assign the activity.");
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 ${
-        isVisible ? "pointer-events-auto" : "pointer-events-none"
-      }`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#102746]/40 p-4"
+      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
     >
-      {/* Backdrop: Added backdrop-blur-sm and synced duration */}
-      <div
-        className={`absolute inset-0 bg-[#102746]/40 backdrop-blur-sm transition-all duration-300 ease-out motion-reduce:transition-none ${
-          isVisible ? "opacity-100" : "opacity-0"
-        }`}
-        onClick={() => {
-          if (isOpen) onClose();
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Modal Dialog: Added custom cubic-bezier for a spring-like snappy feel and slightly more pronounced scale/translate */}
-      <div
-        ref={dialogRef}
+      <form
         role="dialog"
         aria-modal="true"
-        aria-labelledby="assign-action-title"
-        tabIndex={-1}
-        className={`relative flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded-lg border border-[#E5EAF1] bg-white shadow-xl outline-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] motion-reduce:transition-none ${
-          isVisible
-            ? "translate-y-0 scale-100 opacity-100"
-            : "translate-y-4 scale-[0.96] opacity-0"
-        }`}
+        aria-labelledby="assign-title"
+        onSubmit={handleSubmit}
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-[#EEF1F5] px-5 py-4">
+        <div className="flex items-start justify-between border-b border-[#EEF1F5] p-5">
           <div>
             <h2
-              id="assign-action-title"
+              id="assign-title"
               className="text-base font-semibold text-[#102746]"
             >
-              Create / assign action
+              Create / Assign Action
             </h2>
-            <p className="mt-1 text-[11px] text-[#71809A]">
-              Assigned to a 3G group, not to individual students.
+            <p className="mt-1 text-xs text-[#71809A]">
+              It is assigned to every student of the chosen category in the
+              section and subject.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-md p-1 text-[#71809A] transition-colors hover:bg-[#F8FAFC] hover:text-[#102746]"
+            className="rounded p-1 text-[#71809A] hover:bg-[#F8FAFC]"
           >
             <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="space-y-4 overflow-y-auto p-5">
+        <div className="space-y-5 overflow-y-auto p-5">
+          <div>
+            <span className={labelClass}>Student category</span>
+            <div role="radiogroup" className="flex gap-2">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={category === c}
+                  onClick={() => pickCategory(c)}
+                  className={`h-9 flex-1 rounded-md border text-xs font-medium ${
+                    category === c
+                      ? "border-[#2563EB] bg-[#2563EB] text-white"
+                      : "border-[#DCE3EC] bg-white text-[#52627A] hover:bg-[#F8FAFC]"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {category && (
             <div>
-              <span className={labelClass}>3G category</span>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {CATEGORIES.map((category) => (
-                  <Pill
-                    key={category}
-                    label={category}
-                    active={form.category === category}
-                    onClick={() =>
-                      setForm((current) => ({ ...current, category }))
-                    }
-                    size="md"
-                  />
+              <span className={labelClass}>Activity</span>
+              <div role="radiogroup" className="space-y-2">
+                {policyActions.map((action) => (
+                  <ChoiceRow
+                    key={action.title}
+                    selected={choice === action.title}
+                    onClick={() => pickAction(action)}
+                  >
+                    <span>{action.title}</span>
+                    <OwnerBadge owner={action.owner} />
+                  </ChoiceRow>
                 ))}
+                <ChoiceRow selected={isCustom} onClick={pickCustom}>
+                  <span>Other: add your own activity</span>
+                </ChoiceRow>
               </div>
-              <p className="mt-2 text-[11px] text-[#71809A]">
-                {CATEGORY_HINTS[form.category]}
-              </p>
             </div>
+          )}
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className={labelClass}>
-                Class / Section
-                <select
-                  value={form.section}
-                  onChange={update("section")}
+          {isCustom && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Activity name">
+                <input
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  placeholder="e.g. Viva practice session"
                   className={fieldClass}
-                >
-                  {sections.map((section) => (
-                    <option key={section}>{section}</option>
+                />
+              </Field>
+              <div>
+                <span className={labelClass}>Who does it?</span>
+                <div role="radiogroup" className="flex gap-2">
+                  {["Student", "Teacher"].map((owner) => (
+                    <button
+                      key={owner}
+                      type="button"
+                      role="radio"
+                      aria-checked={performedBy === owner}
+                      onClick={() => setPerformedBy(owner)}
+                      className={`h-9 flex-1 rounded-md border text-xs font-medium ${
+                        performedBy === owner
+                          ? "border-[#2563EB] bg-[#EEF4FF] text-[#2563EB]"
+                          : "border-[#DCE3EC] bg-white text-[#52627A] hover:bg-[#F8FAFC]"
+                      }`}
+                    >
+                      {owner}
+                    </button>
                   ))}
-                </select>
-              </label>
-              <label className={labelClass}>
-                Subject
-                <select
-                  value={form.subject}
-                  onChange={update("subject")}
-                  className={fieldClass}
-                >
-                  {subjects.map((subject) => (
-                    <option key={subject}>{subject}</option>
-                  ))}
-                </select>
-              </label>
+                </div>
+              </div>
             </div>
+          )}
 
-            <p className="rounded-md bg-[#F8FAFC] p-3 text-xs leading-5 text-[#52627A]">
-              This action will be assigned to every{" "}
-              <span className="font-semibold text-[#102746]">
-                {form.category}
-              </span>{" "}
-              student in{" "}
-              <span className="font-semibold text-[#102746]">{audience}</span>{" "}
-              for{" "}
-              <span className="font-semibold text-[#102746]">
-                {form.subject}
-              </span>
-              .
+          {choice && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Section">
+                  <select
+                    value={section}
+                    onChange={(e) => setSection(e.target.value)}
+                    className={fieldClass}
+                  >
+                    <option value="">Select section</option>
+                    {sections.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Subject">
+                  <select
+                    value={courseCode}
+                    onChange={(e) => setCourseCode(e.target.value)}
+                    className={fieldClass}
+                  >
+                    <option value="">Select subject</option>
+                    {subjects.map((s) => (
+                      <option key={s.code} value={s.code}>
+                        {s.code} · {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Assessment">
+                  <select
+                    value={assessmentType}
+                    onChange={(e) => setAssessmentType(e.target.value)}
+                    className={fieldClass}
+                  >
+                    <option value="">Select assessment</option>
+                    {ASSESSMENTS.map((a) => (
+                      <option key={a.value} value={a.value}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Due date">
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className={fieldClass}
+                  />
+                </Field>
+                <Field label="Evidence required">
+                  <input
+                    value={evidence}
+                    onChange={(e) => setEvidence(e.target.value)}
+                    placeholder="e.g. Answer sheet"
+                    className={fieldClass}
+                  />
+                </Field>
+                <Field label="Number of steps">
+                  <input
+                    type="number"
+                    min={1}
+                    value={steps}
+                    onChange={(e) => setSteps(e.target.value)}
+                    className={fieldClass}
+                  />
+                </Field>
+              </div>
+              <Field label="Instructions (optional)">
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-md border border-[#DCE3EC] p-3 text-xs outline-none focus:border-[#2563EB]"
+                />
+              </Field>
+            </>
+          )}
+
+          {submitError && (
+            <p role="alert" className="text-xs text-[#DC2626]">
+              {submitError}
             </p>
+          )}
+        </div>
 
-            <label className={labelClass}>
-              Activity / action
-              <input
-                required
-                value={form.activity}
-                onChange={update("activity")}
-                placeholder="e.g. Attend remedial DBMS classes"
-                className={fieldClass}
-              />
-            </label>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className={labelClass}>
-                Evidence required
-                <input
-                  required
-                  value={form.evidence}
-                  onChange={update("evidence")}
-                  placeholder="e.g. Attendance / completion proof"
-                  className={fieldClass}
-                />
-              </label>
-              <label className={labelClass}>
-                Due date
-                <input
-                  required
-                  type="date"
-                  min={todayISO()}
-                  value={form.due}
-                  onChange={update("due")}
-                  className={fieldClass}
-                />
-              </label>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 border-t border-[#EEF1F5] px-5 py-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-9 rounded-md border border-[#DCE3EC] bg-white px-4 text-xs font-semibold text-[#52627A] transition-colors hover:bg-[#F8FAFC]"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="h-9 rounded-md bg-[#2563EB] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#1D4ED8]"
-            >
-              Assign to {form.category} students
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="flex justify-end gap-2 border-t border-[#EEF1F5] p-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-9 rounded-md border border-[#DCE3EC] px-4 text-xs font-medium text-[#52627A] hover:bg-[#F8FAFC]"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="h-9 rounded-md bg-[#2563EB] px-4 text-xs font-semibold text-white hover:bg-[#1D4ED8] disabled:opacity-40"
+          >
+            {submitting ? "Assigning…" : "Assign action"}
+          </button>
+        </div>
+      </form>
     </div>
   );
-})
+}
+
+export default function AssignActionModal({
+  isOpen,
+  sections = [],
+  subjects = [], // [{ code, name }]
+  onSubmit,
+  onClose,
+}) {
+  if (!isOpen) return null;
+  return (
+    <Form
+      sections={sections}
+      subjects={subjects}
+      onSubmit={onSubmit}
+      onClose={onClose}
+    />
+  );
+}
