@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FileSpreadsheet, AlertCircle, Save, X, Edit3, Trash2 } from "lucide-react";
 import useTeacherStore from "@/store/useTeacherStore";
-
+import { Toaster,toast } from "sonner";
 export default function ValidationTable({
   file,
   setFile,
@@ -74,14 +74,23 @@ export default function ValidationTable({
     runValidation(newData, maxMarks);
   };
 
-  const handleReupload = () => {
-    const confirmReupload = window.confirm("Do you want to reupload? Any unsaved edits will be lost.");
-    if (confirmReupload) {
-      setFile(null);
-      setParsedData([]);
-      setCurrentPhase(1); 
-    }
-  };
+const handleReupload = () => {
+  toast.warning("Do you want to reupload?", {
+    description: "Any unsaved edits will be lost.",
+    duration: 60000,
+    action: {
+      label: "Yes, Reupload",
+      onClick: () => {
+        setFile(null);
+        setParsedData([]);
+        setCurrentPhase(1);
+      },
+    },
+    cancel: {
+      label: "Cancel",
+    },
+  });
+};
 
   const filters = useTeacherStore((state) => state.filters);
 

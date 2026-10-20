@@ -11,7 +11,7 @@ import ValidationTable from "./fragments/ValidationTable";
 import Header from "@/components/dashboard/Header";
 import ViewUploadHistory from "./fragments/ViewUploadHistory";
 import axios from "axios";
-import { toast } from "sonner";
+import { Toaster, toast } from 'sonner';
 
 
 // Initial mock history data
@@ -95,7 +95,8 @@ const UploadMarks = () => {
       const text = e.target.result;
       if (!text) return;
       const lines = text.split('\n').filter(line => line.trim() !== '');
-      if (lines.length < 2) return alert("The CSV file is empty or missing data rows.");
+  
+      if (lines.length < 2) return toast.error("The CSV file is empty or missing data rows.");
 
       const rawRows = [];
       for (let i = 1; i < lines.length; i++) {
@@ -111,7 +112,7 @@ const UploadMarks = () => {
 
   const handleFile = (selectedFile) => {
     if (!selectedFile) return;
-    if (!selectedFile.name.endsWith(".csv")) return alert("Please upload a .csv file.");
+    if (!selectedFile.name.endsWith(".csv")) return toast.error("Please upload a .csv file.");
     setFile(selectedFile);
     setCurrentPhase(2); // Selecting a file moves active step to 2 (Upload File)
   };
@@ -156,15 +157,16 @@ const UploadMarks = () => {
     }
   };
 
-  // Push new upload record into history array and complete flow
+ 
   const handleConfirmSubmission = async () => {
-    if (errorCount > 0) {
-      return alert("Please fix all errors before submitting.");
-    }
+   if (errorCount > 0) {
+      return toast.warning("Please fix all errors before submitting.");
+
+         }
     try {
       setIsSubmitting(true);
 
-      // 1. Construct dynamic payload
+ 
       console.log(activeFilters.courses);
 
       const payload = {
@@ -214,7 +216,7 @@ const UploadMarks = () => {
       setCurrentPhase(4); // Move to Phase 4: Confirm Submission / Success
     }
     catch (err) {
-      alert("Submission Error: " + err.message);
+      toast.error("Submission Error: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -235,6 +237,7 @@ const UploadMarks = () => {
 
   return (
     <>
+      <Toaster position="top-right" richColors />
       <Header />
       <div className="min-h-screen text-[#0f172a] pb-12 font-sans not-italic">
         <main className="mx-auto max-w-[1400px] p-5 md:p-5 space-y-5">
