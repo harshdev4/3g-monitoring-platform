@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,7 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="font-inter min-h-full bg-white flex flex-col">{children}</body>
+      <body className="font-inter min-h-full bg-white flex flex-col">{children} <Toaster position="top-right" richColors /></body>
     </html>
   );
 }

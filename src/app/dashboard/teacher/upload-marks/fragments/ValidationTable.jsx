@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FileSpreadsheet, AlertCircle, Save, X, Edit3, Trash2 } from "lucide-react";
 import useTeacherStore from "@/store/useTeacherStore";
-
+import { Toaster,toast } from "sonner";
 export default function ValidationTable({
   file,
   setFile,
@@ -74,14 +74,23 @@ export default function ValidationTable({
     runValidation(newData, maxMarks);
   };
 
-  const handleReupload = () => {
-    const confirmReupload = window.confirm("Do you want to reupload? Any unsaved edits will be lost.");
-    if (confirmReupload) {
-      setFile(null);
-      setParsedData([]);
-      setCurrentPhase(1); 
-    }
-  };
+const handleReupload = () => {
+  toast.warning("Do you want to reupload?", {
+    description: "Any unsaved edits will be lost.",
+    duration: 60000,
+    action: {
+      label: "Yes, Reupload",
+      onClick: () => {
+        setFile(null);
+        setParsedData([]);
+        setCurrentPhase(1);
+      },
+    },
+    cancel: {
+      label: "Cancel",
+    },
+  });
+};
 
   const filters = useTeacherStore((state) => state.filters);
 
@@ -222,30 +231,30 @@ export default function ValidationTable({
                       )}
                     </td>
 
-                    {/* NEW: Faculty Observation Column */}
-                    <td className="px-4 py-4 truncate">
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          className="border border-blue-400 rounded px-2 py-1.5 w-full text-[12px] font-normal outline-none bg-white transition"
-                          placeholder="Observation..."
-                          value={editForm.facultyObservation || ""}
-                          onChange={(e) => setEditForm({ ...editForm, facultyObservation: e.target.value })}
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          className="border border-slate-200 bg-transparent hover:bg-slate-50 focus:bg-white rounded px-2 py-1.5 w-full text-[12px] outline-none focus:border-blue-400 transition"
-                          placeholder="Add observation..."
-                          value={row.facultyObservation || ""}
-                          onChange={(e) => {
-                            const newData = [...parsedData];
-                            newData[idx] = { ...newData[idx], facultyObservation: e.target.value };
-                            setParsedData(newData);
-                          }}
-                        />
-                      )}
-                    </td>
+                 {/* NEW: Faculty Observation Column */}
+<td className="px-4 py-4 truncate">
+  {isEditing ? (
+    <input
+      type="text"
+      className="border border-blue-400 rounded px-2 py-1.5 w-full text-[12px] font-normal outline-none bg-white transition"
+      placeholder="Observation..."
+      value={editForm.facultyObservation || ""}
+      onChange={(e) => setEditForm({ ...editForm, facultyObservation: e.target.value })}
+    />
+  ) : (
+    <input
+      type="text"
+      className="border border-slate-200 bg-transparent hover:bg-slate-50 focus:bg-white rounded px-2 py-1.5 w-full text-[12px] outline-none focus:border-blue-400 transition"
+      placeholder="Add observation..."
+      value={row.facultyObservation || ""}
+      onChange={(e) => {
+        const newData = [...parsedData];
+        newData[idx] = { ...newData[idx], facultyObservation: e.target.value };
+        setParsedData(newData);
+      }}
+    />
+  )}
+</td>
 
                     <td className="px-4 py-4 text-center">
                       {isEditing ? (
