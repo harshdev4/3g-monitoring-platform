@@ -142,11 +142,13 @@ export const getStudentProgressionHistory = async (filter) => {
         a.student_id,
         a.obtained_mark,
         a.max_mark,
-
-        DENSE_RANK() OVER (
-          PARTITION BY a.type, a.course_id
-          ORDER BY a.obtained_mark DESC NULLS LAST
-        ) AS marks_rank
+        CASE
+          WHEN a.obtained_mark IS NULL THEN NULL
+          ELSE DENSE_RANK() OVER (
+            PARTITION BY a.type, a.course_id
+            ORDER BY a.obtained_mark DESC NULLS LAST
+        ) 
+        END AS marks_rank
 
       FROM public.assessments a
 
@@ -184,10 +186,9 @@ export const getStudentProgressionHistory = async (filter) => {
   SELECT *
   FROM (
     VALUES
-      ('pre-mse', 'Baseline', 1),
-      ('mse-1', 'MSE 1', 2),
-      ('mse-2', 'MSE 2', 3),
-      ('ese', 'ESE', 4)
+      ('mse-1', 'MSE 1', 1),
+      ('mse-2', 'MSE 2', 2),
+      ('ese', 'ESE', 3)
   ) AS cp(type, checkpoint, sort_order)
   WHERE $4 <> 1 OR type <> 'pre-mse'
 )

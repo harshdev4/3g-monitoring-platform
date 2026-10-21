@@ -111,7 +111,7 @@ export default async function StudentDetailsPage({
  
 
   const assessmentConfig = [
-    { label: "Baseline", type: "pre-mse" },
+
     { label: "MSE 1", type: "mse-1" },
     { label: "MSE 2", type: "mse-2" },
     { label: "ESE", type: "ese" },

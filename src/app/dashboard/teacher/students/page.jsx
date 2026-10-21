@@ -33,6 +33,15 @@ const Page = () => {
   };
   const filters = useTeacherStore((state) => state.filters);
 
+  const description = [
+    "Assigned classes",
+  filters.program,
+  filters.semester ? `Semester ${filters.semester}` : "",
+  "Academic Year 2026–27",
+]
+  .filter(Boolean)
+  .join(" · ");
+
   return (
     <div>
       <Header />
@@ -41,7 +50,7 @@ const Page = () => {
         <UserWorkSpace
           user="Teacher"
           pageTitle="Students"
-          description="Assigned classes · MCA · Semester I · Academic Year 2026–27"
+         description={description}
           showAction
           actionLabel="Export student list"
           onAction={handleExportStudents}
