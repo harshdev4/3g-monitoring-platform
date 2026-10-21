@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
-
+import { useRouter } from "next/navigation";
 import Header from "@/components/dashboard/Header";
 import UserWorkSpace from "@/components/dashboard/UserWorkSpace";
 import DashboardFilters from "@/components/teacher/DashboardFilters";
-import MetricCards from "@/components/teacher/MetricCards";
-import StudentsTable from "@/components/teacher/StudentsTable";
-// import MatricInitializer from "@components/mapper/MatricInitializer"
 import AttentionContext from "./fragments/AttentionContext";
 import RecommendedFacultyFollowUp from "./fragments/RecommendedFacultyFollowUp";
 import AtRiskPageStudentTableSection from "@/components/teacher/AtRiskPageStudentTableSection";
@@ -15,7 +12,7 @@ import AtRiskMetricSection from "@/components/teacher/AtRiskMetricSection";
 
 const Page = () => {
   const [selectedStudent, setSelectedStudent] = useState();
-
+   const router = useRouter();
   return (
     <div>
       <Header />
@@ -29,7 +26,9 @@ const Page = () => {
           welcomeDescription="Identify students who need attention and plan timely interventions."
           showAction
           actionLabel="Assign support action"
-          onAction={() =>  console.log("Assign support action clicked")}
+          onAction={() => {
+    router.push("/dashboard/teacher/actions");
+  }}
           showWelcome={true}
         />
 
@@ -42,26 +41,6 @@ const Page = () => {
         <div className="mt-3">
           <AtRiskPageStudentTableSection/>
         </div>
-
-        <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-          <AttentionContext
-            student={selectedStudent}
-            onViewDetails={(student) => {
-              console.log("View student:", student);
-            }}
-          />
-
-          <RecommendedFacultyFollowUp
-            student={selectedStudent}
-            onCreateAction={(student) => {
-              console.log("Create action for:", student?.name);
-            }}
-          />
-        </div>
-
-        <p className="mt-7 text-[9px] text-[#7183A3]">
-          3G · Academic insights updated 05 Oct 2026, 09:30 IST
-        </p>
       </div>
     </div>
   );

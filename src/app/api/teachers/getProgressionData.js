@@ -119,4 +119,106 @@ const getProgressionData = async (filter) => {
   return rows;
 };
 
+//  New Code
+export const getStudentProgressionHistory = async (filter) => {
+  const { semester, className, courses, rollNo } = filter ?? {};
+
+  if (!semester || !className || !courses || !rollNo) {
+    throw new Error("Missing required student progression filters");
+  }
+
+  if (Array.isArray(courses)) {
+    throw new Error("Expected a single course ID");
+  }
+
+  const section = className.replace(/^MCA-/, "");
+  const semesterNumber = Number(semester);
+
+  const query = `
+    WITH ranked_assessments AS (
+      SELECT
+        a.type,
+        a.course_id,
+        a.student_id,
+        a.obtained_mark,
+        a.max_mark,
+        CASE
+          WHEN a.obtained_mark IS NULL THEN NULL
+          ELSE DENSE_RANK() OVER (
+            PARTITION BY a.type, a.course_id
+            ORDER BY a.obtained_mark DESC NULLS LAST
+        ) 
+        END AS marks_rank
+
+      FROM public.assessments a
+
+      JOIN public.students s
+        ON s.university_roll_no = a.student_id
+
+      WHERE s.semester = $1
+        AND s.section = $2
+        AND a.semester = $1
+        AND a.course_id = $3
+    ),
+
+    categorized_assessments AS (
+      SELECT
+        type,
+        student_id,
+        obtained_mark,
+        max_mark,
+
+        CASE
+          WHEN obtained_mark IS NULL
+            OR max_mark IS NULL
+            OR max_mark <= 0
+            THEN NULL
+          WHEN marks_rank <= 10 THEN 'Gallant'
+          WHEN obtained_mark::numeric / NULLIF(max_mark, 0) < 0.40
+            THEN 'Gradual'
+          ELSE 'Growing'
+        END AS category
+
+      FROM ranked_assessments
+    ),
+
+    checkpoints AS (
+  SELECT *
+  FROM (
+    VALUES
+      ('mse-1', 'MSE 1', 1),
+      ('mse-2', 'MSE 2', 2),
+      ('ese', 'ESE', 3)
+  ) AS cp(type, checkpoint, sort_order)
+  WHERE $4 <> 1 OR type <> 'pre-mse'
+)
+
+    SELECT
+      cp.checkpoint,
+      ca.category,
+      ca.obtained_mark AS marks,
+      ca.max_mark,
+      cp.sort_order
+
+    FROM checkpoints cp
+
+    LEFT JOIN categorized_assessments ca
+      ON ca.type = cp.type
+      AND ca.student_id = $5
+
+    ORDER BY cp.sort_order;
+  `;
+
+  const { rows } = await pool.query(query, [
+    semester,
+    section,
+    courses,
+    semesterNumber,
+    String(rollNo),
+  ]);
+
+  return rows;
+};
+
+
 export default getProgressionData;

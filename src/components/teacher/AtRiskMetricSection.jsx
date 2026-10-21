@@ -5,7 +5,9 @@ import MetricCards from "./MetricCards";
 
 const AtRiskMetricSection = () => {
     const students = useFilterStudentsStore((state) => state.students);
-    
+    const studentsWithAssessments = useFilterStudentsStore(
+  (state) => state.studentsWithAssessments
+);
     const filters = useTeacherStore((state) => state.filters);
     const percentageToMark = (obtained, percentage, maxMark) => {
         const obtainedMark = Number(obtained);
@@ -25,32 +27,25 @@ const AtRiskMetricSection = () => {
     };
     const metrics = [
         {
-            type: "students",
+            type: "",
             label: "Gradual students",
             value: students.filter(st => st.three_g_category == "Gradual").length,
             description: filters.courseName,
             iconClassName: "text-[#2563EB]",
         },
         {
-            type: "marks",
+            type: "",
             label: "Low marks",
             value: students.filter(st => percentageToMark(st.obtained_mark, 40, st.max_mark)).length,
             description: "Latest marks below 40%",
             iconClassName: "text-[#EF4444]",
         },
         {
-            type: "attendance",
+            type: "",
             label: "Low attendance",
             value: students.filter(st => st.attendance_pct < 75).length,
             description: "Attendance below 75%",
             iconClassName: "text-[#F59E0B]",
-        },
-        {
-            type: "performance",
-            label: "Declining performance",
-            value: 12,
-            description: "Drop of 5+ points since MSE-I",
-            iconClassName: "text-[#10B981]",
         },
     ];
     return (

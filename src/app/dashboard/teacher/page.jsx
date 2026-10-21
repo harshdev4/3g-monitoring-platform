@@ -17,7 +17,7 @@ import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer
 
 const page = async () => {
 
-  const teacher = await getUser("annu.yadav@kiet.edu");
+  const teacher = await getUser("prashant.agarwal@kiet.edu");
 
   if (!teacher) {
     return <p>User not found.</p>
