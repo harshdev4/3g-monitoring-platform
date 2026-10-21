@@ -474,12 +474,22 @@ export default function StudentsTable({ title, subtitle, categoryPage = "All", s
                         />
                       </td>
                       <td className="px-3 py-2">
+
                         <Link
-                          href={`/dashboard/teacher/students/${student.university_roll_no}`}
+                          href={{
+                            pathname: `/dashboard/teacher/students/${student.university_roll_no}`,
+                            query: {
+                              semester: filters.semester,
+                              className: filters.className,
+                              courses: filters.courses,
+                              assessment: filters.assessment,
+                            },
+                          }}
                           className="text-[11px] font-medium text-[#1670FF] hover:underline"
                         >
                           View Student
                         </Link>
+
                       </td>
                     </tr>
                   ))

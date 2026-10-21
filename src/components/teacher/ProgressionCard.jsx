@@ -31,7 +31,13 @@ ChartJS.register(
   Legend
 );
 
-const ProgressionCard = () => {
+const ProgressionCard = ({
+  individualMode = false,
+  subtitle: customSubtitle,
+  labels: customLabels,
+  series: customSeries,
+  footer: customFooter,
+}) => {
   const filters = useTeacherStore((state) => state.filters);
 
   const [retryCount, setRetryCount] = useState(0);
@@ -110,6 +116,7 @@ const ProgressionCard = () => {
   );
 
   useEffect(() => {
+    if (individualMode) return;
     if (!hasRequiredFilters) {
       clearStudents();
       setLoading(false);
@@ -123,6 +130,7 @@ const ProgressionCard = () => {
 
     return () => controller.abort();
   }, [
+    individualMode,
     hasRequiredFilters,
     fetchStudents,
     clearStudents,
@@ -164,10 +172,20 @@ const ProgressionCard = () => {
   const subtitle = `Sem- ${filters.semester} ${filters.className} · Average from assessment`;
   const labels = [(filters.semester != 1 && "PRE-MSE"), "MSE-1", "MSE-2", "ESE"].filter(Boolean);
   const footer = `Cohort: ${students.length} · Grade bands over assessment period`;
+  const chartLabels = individualMode ? customLabels : labels;
+  const chartSeries = individualMode ? customSeries : progressionSeries;
+
+  const chartSubtitle = individualMode
+    ? customSubtitle
+    : subtitle;
+
+  const chartFooter = individualMode
+    ? customFooter
+    : footer;
 
   const chartData = {
-    labels,
-    datasets: progressionSeries.map((item) => ({
+    labels: chartLabels,
+    datasets: chartSeries.map((item) => ({
       label: item.label,
       data: item.data,
       borderColor: item.color,
@@ -177,6 +195,7 @@ const ProgressionCard = () => {
       pointHoverRadius: 4,
       tension: 0.35,
       fill: false,
+      spanGaps: false,
     })),
   };
 
@@ -235,15 +254,17 @@ const ProgressionCard = () => {
           3G Progression
         </h3>
 
-        <p className="mt-1 text-xs text-[#71809A]">
-          {hasRequiredFilters
-            ? subtitle
-            : "Select your filters to view student progression."}
+        <p className="text-sm text-[#71809A]">
+          {individualMode
+            ? chartSubtitle
+            : hasRequiredFilters
+              ? chartSubtitle
+              : "Select your filters to view student progression."}
         </p>
       </div>
 
       {/* Loading state */}
-      {loading && (
+      {!individualMode && loading && (
         <div
           role="status"
           aria-label="Loading progression data"
@@ -296,7 +317,7 @@ const ProgressionCard = () => {
       )}
 
       {/* Error state */}
-      {!loading && hasRequiredFilters && error && (
+      {!individualMode && !loading && hasRequiredFilters && error && (
         <div
           role="alert"
           className="mt-4 flex min-h-[240px] flex-col items-center justify-center rounded-lg border border-red-100 bg-red-50/60 px-5 py-6 text-center"
@@ -328,7 +349,7 @@ const ProgressionCard = () => {
       )}
 
       {/* Missing filters */}
-      {!loading && !error && !hasRequiredFilters && (
+     {!individualMode && !loading && !error && !hasRequiredFilters && (
         <div className="mt-4 flex min-h-[240px] flex-col items-center justify-center rounded-lg border border-dashed border-[#DCE4EE] bg-[#F8FAFC] px-5 text-center">
           <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-white ring-1 ring-[#E5EAF1]">
             <SlidersHorizontal
@@ -348,17 +369,15 @@ const ProgressionCard = () => {
       )}
 
       {/* Chart */}
-      {!loading && !error && hasRequiredFilters && (
-        <>
-          <div className="relative mt-4 h-47.5 w-full min-w-0">
-            <Line data={chartData} options={chartOptions} />
-          </div>
+     {individualMode || (!loading && !error && hasRequiredFilters) ? (
+  <>
+    <div className="relative mt-4 h-47.5 w-full min-w-0">
+      <Line data={chartData} options={chartOptions} />
+    </div>
 
-          <p className="mt-3 border-t border-[#EEF1F5] pt-3 text-[11px] text-[#8A98AB]">
-            {footer}
-          </p>
-        </>
-      )}
+    <p className="mt-2 text-sm leading-4 ">{chartFooter}</p>
+  </>
+) : null}
     </div>
   );
 };
