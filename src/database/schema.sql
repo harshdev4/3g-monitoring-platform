@@ -260,6 +260,42 @@ CREATE TABLE student_academic_records (
         UNIQUE (student_id, semester, academic_year)
 );
 
+
+CREATE TABLE IF NOT EXISTS public.teacher_action_submissions (
+    submission_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    -- Action and teacher references
+    action_id INTEGER NOT NULL
+        REFERENCES public.action_templates(action_id)
+        ON DELETE CASCADE,
+
+    emp_id TEXT NOT NULL
+        REFERENCES public.teachers(emp_id)
+        ON DELETE CASCADE,
+
+    -- Cloudinary file information
+    cloudinary_url TEXT NOT NULL,
+    cloudinary_public_id TEXT NOT NULL,
+    resource_type TEXT NOT NULL,
+    file_format TEXT,
+    original_filename TEXT NOT NULL,
+    file_size BIGINT,
+
+    -- Submission filter metadata
+    program_name TEXT,
+    semester INTEGER,
+    course_code TEXT,
+    assessment_type TEXT,
+    target_category TEXT,
+
+    -- Timestamps
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- One current submission per teacher for each action
+    CONSTRAINT uq_teacher_action_submission
+        UNIQUE (action_id, emp_id)
+);
 -- --------------------------------------------
 -- 10. INDEXES FOR COMMON LOOKUPS
 -- --------------------------------------------
@@ -286,6 +322,8 @@ CREATE INDEX idx_course_enrollment_student
 
 CREATE INDEX idx_student_academic_records
     ON public.student_academic_records(student_id, semester, academic_year);
+
+
 
 CREATE INDEX idx_assessments_student_course
     ON public.assessments(student_id, course_id);

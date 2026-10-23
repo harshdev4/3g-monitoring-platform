@@ -4,14 +4,16 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import {
-    FileUp,
     ClipboardList,
     X,
     LoaderCircle,
     AlertCircle,
     CheckCircle2,
+    ArrowRight,
 } from "lucide-react";
+
 import useTeacherStore from "@/store/useTeacherStore";
+import TeacherSubmissionForm from "@/components/teacher/TeacherSubmissionForm";
 
 function getApiError(error, fallback) {
     const data = error?.response?.data;
@@ -36,20 +38,26 @@ function getApiError(error, fallback) {
 }
 
 function ActionModal({ action, filters, onClose }) {
-    const [file, setFile] = useState(null);
+    const empId = useTeacherStore((state) => state.empId);
+
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
-    const empId = useTeacherStore((state) => state.empId);
+
     if (!action) return null;
 
     const isTeacherSubmission = action.submitter_type === "teacher";
 
-    const handleSubmit = async (event) => {
+    const handleAssign = async (event) => {
         event.preventDefault();
 
-        if (isTeacherSubmission && !file) {
-            setError("Please select a file to upload.");
+        if (!empId) {
+            setError("Teacher information is unavailable. Please sign in again.");
+            return;
+        }
+
+        if (!filters.program || !filters.semester || !filters.courses) {
+            setError("Select a program, semester, and course before assigning.");
             return;
         }
 
@@ -58,52 +66,33 @@ function ActionModal({ action, filters, onClose }) {
         setMessage("");
 
         try {
-            let response;
+            const response = await axios.post(
+                `/api/teachers/actions/${encodeURIComponent(
+                    action.action_id
+                )}/assign`,
+                {
+                    action_id: action.action_id,
+                    target_category: action.target_category,
+                    assessment_type: action.assessment_type,
+                    program: filters.program,
+                    semester: filters.semester,
+                    course_code: filters.courses,
+                    empId,
+                }
+            );
 
-            if (isTeacherSubmission) {
-                const formData = new FormData();
-
-                formData.append("file", file);
-                formData.append("action_id", String(action.action_id));
-                formData.append("assessment", filters.assessment);
-                formData.append("category", filters.category3G);
-                formData.append("program", filters.program ?? "");
-                formData.append("semester", filters.semester ?? "");
-                formData.append("course_code", filters.courses ?? "");
-
-                response = await axios.post(
-                    `/api/teachers/actions/${action.action_id}/submit`,
-                    formData
+            if (response.data?.success === false) {
+                setError(
+                    response.data.message || "No eligible students were found."
                 );
-            } else {
-                response = await axios.post(
-                    `/api/teachers/actions/${action.action_id}/assign`,
-                    {
-                        action_id: action.action_id,
-                        target_category: action.target_category,
-                        assessment_type: action.assessment_type,
-                        program: filters.program ?? "",
-                        semester: filters.semester ?? "",
-                        course_code: filters.courses ?? "",
-                        empId,
-                    }
-                );
+                return;
             }
 
             setMessage(
-                response.data?.message ||
-                (isTeacherSubmission
-                    ? "File submitted successfully."
-                    : "Action assigned successfully.")
+                response.data?.message || "Action assigned successfully."
             );
-
-            if (isTeacherSubmission) {
-                setFile(null);
-            }
         } catch (err) {
-            setError(
-                getApiError(err, "The action could not be completed.")
-            );
+            setError(getApiError(err, "The action could not be assigned."));
         } finally {
             setSubmitting(false);
         }
@@ -122,7 +111,7 @@ function ActionModal({ action, filters, onClose }) {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="action-modal-title"
-                className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl"
+                className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl"
             >
                 <div className="mb-4 flex items-start justify-between gap-3">
                     <div>
@@ -143,17 +132,29 @@ function ActionModal({ action, filters, onClose }) {
                         onClick={onClose}
                         disabled={submitting}
                         aria-label="Close modal"
-                        className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
+                        className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
                     >
                         <X size={19} />
                     </button>
                 </div>
 
-                <p className="mb-5 text-sm leading-6 text-slate-600">
-                    {action.description}
-                </p>
+                {action.description && (
+                    <p className="mb-5 text-sm leading-6 text-slate-600">
+                        {action.description}
+                    </p>
+                )}
 
-                {message ? (
+                {isTeacherSubmission ? (
+                    <TeacherSubmissionForm
+                        action={action}
+                        filters={filters}
+                        onSubmitted={(submission) => {
+                            setMessage(
+                                submission?.message || "Teacher submission uploaded successfully."
+                            );
+                        }}
+                    />
+                ) : message ? (
                     <div
                         role="status"
                         className="rounded-lg border border-green-200 bg-green-50 p-4"
@@ -164,65 +165,27 @@ function ActionModal({ action, filters, onClose }) {
                         </div>
                     </div>
                 ) : (
-                    <form onSubmit={handleSubmit}>
-                        {isTeacherSubmission ? (
-                            <div className="mb-5">
-                                <label
-                                    htmlFor="action-file"
-                                    className="mb-2 block text-sm font-medium text-slate-700"
-                                >
-                                    Upload supporting document
-                                </label>
+                    <form onSubmit={handleAssign}>
+                        <div className="mb-5 rounded-lg border border-blue-100 bg-blue-50 p-4">
+                            <p className="text-sm font-medium text-[#102746]">
+                                Assign to {action.target_category} students
+                            </p>
 
-                                <label
-                                    htmlFor="action-file"
-                                    className="flex cursor-pointer flex-col items-center rounded-lg border-2 border-dashed border-slate-300 px-4 py-7 text-center transition hover:border-blue-400 hover:bg-blue-50/40"
-                                >
-                                    <FileUp
-                                        size={27}
-                                        className="mb-2 text-blue-600"
-                                    />
-
-                                    <span className="break-all text-sm font-medium text-slate-700">
-                                        {file ? file.name : "Choose a file to upload"}
-                                    </span>
-
-                                    <span className="mt-1 text-xs text-slate-500">
-                                        Select the supporting document from your device
-                                    </span>
-
-                                    <input
-                                        id="action-file"
-                                        type="file"
-                                        className="sr-only"
-                                        onChange={(event) => {
-                                            setFile(event.target.files?.[0] ?? null);
-                                            setError("");
-                                        }}
-                                        disabled={submitting}
-                                    />
-                                </label>
-                            </div>
-                        ) : (
-                            <div className="mb-5 rounded-lg border border-blue-100 bg-blue-50 p-4">
-                                <p className="text-sm font-medium text-[#102746]">
-                                    Assign to {action.target_category} students
-                                </p>
-
-                                <p className="mt-1 text-xs leading-5 text-slate-600">
-                                    Eligible students should be determined by the server
-                                    using the selected program, semester, course, and
-                                    3G category.
-                                </p>
-                            </div>
-                        )}
+                            <p className="mt-1 text-xs leading-5 text-slate-600">
+                                The server must determine eligible students using the
+                                selected program, semester, course, assessment, and
+                                category. If no eligible students exist, no assignments
+                                should be created.
+                            </p>
+                        </div>
 
                         {error && (
                             <div
                                 role="alert"
-                                className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700"
+                                className="mb-4 flex items-start gap-2 rounded-md bg-red-50 p-3 text-sm text-red-700"
                             >
-                                {error}
+                                <AlertCircle size={17} className="mt-0.5 shrink-0" />
+                                <span>{error}</span>
                             </div>
                         )}
 
@@ -238,24 +201,15 @@ function ActionModal({ action, filters, onClose }) {
 
                             <button
                                 type="submit"
-                                disabled={
-                                    submitting ||
-                                    (isTeacherSubmission && !file)
-                                }
+                                disabled={submitting}
                                 className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {submitting && (
-                                    <LoaderCircle
-                                        size={15}
-                                        className="animate-spin"
-                                    />
+                                    <LoaderCircle size={15} className="animate-spin" />
                                 )}
-
                                 {submitting
-                                    ? "Processing..."
-                                    : isTeacherSubmission
-                                        ? "Upload submission"
-                                        : "Assign to category students"}
+                                    ? "Assigning..."
+                                    : "Assign to category students"}
                             </button>
                         </div>
                     </form>
@@ -293,10 +247,7 @@ export default function ActionList({ filters }) {
 
             try {
                 const response = await axios.get("/api/teachers/actions", {
-                    params: {
-                        assessment,
-                        category,
-                    },
+                    params: { assessment, category },
                     signal: controller.signal,
                 });
 
@@ -347,7 +298,20 @@ export default function ActionList({ filters }) {
                     </span>
                 </div>
 
-                {loading ? (
+                {!assessment || !category ? (
+                    <div className="rounded-lg border border-dashed border-slate-200 py-10 text-center">
+                        <ClipboardList
+                            size={28}
+                            className="mx-auto mb-2 text-slate-400"
+                        />
+                        <p className="text-sm font-medium text-slate-700">
+                            Select an assessment and 3G category
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                            Available action templates will appear here.
+                        </p>
+                    </div>
+                ) : loading ? (
                     <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
                         <LoaderCircle size={18} className="animate-spin" />
                         Loading actions...
@@ -366,11 +330,9 @@ export default function ActionList({ filters }) {
                             size={28}
                             className="mx-auto mb-2 text-slate-400"
                         />
-
                         <p className="text-sm font-medium text-slate-700">
                             No actions available
                         </p>
-
                         <p className="mt-1 text-xs text-slate-500">
                             Try selecting another assessment or 3G category.
                         </p>
@@ -403,8 +365,8 @@ export default function ActionList({ filters }) {
                                         {action.target_category} · {action.assessment_type}
                                     </span>
 
-                                    <span className="text-xs font-medium text-blue-600">
-                                        View action →
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600">
+                                        View action <ArrowRight size={14} />
                                     </span>
                                 </div>
                             </button>

@@ -8,6 +8,7 @@ import Header from "@/components/dashboard/Header";
 import ActionFilters from "@/components/teacher/ActionFilters";
 import ActionList from "./ActionList";
 import AssignedActions from "./AssignedActions";
+import TeacherSubmissions from "@/components/teacher/TeacherSubmissions";
 
 export default function ActionsPage() {
   const [filters, setFilters] = useState({
@@ -61,6 +62,9 @@ export default function ActionsPage() {
 
           <section>
             <AssignedActions filters={filters} />
+          </section>
+          <section>
+            <TeacherSubmissions filters={filters} />
           </section>
         </div>
       </main>
