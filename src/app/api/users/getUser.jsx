@@ -3,14 +3,15 @@ import pool from "@/config/db.config";
 const getUser = async (identifier) => {
     if (!identifier) return null;
 
-    let result = await pool.query(
-        `SELECT u.*
+    const result = await pool.query(
+        `SELECT u.*, t.emp_id, d.dept_name, t.designation
          FROM users u
          LEFT JOIN teachers t ON t.user_id = u.unique_id
+         LEFT JOIN departments d ON d.dept_code = t.dept_code
          WHERE LOWER(u.mail_id) = LOWER($1) OR t.emp_id = $1
          LIMIT 1`,
         [identifier.trim()]
-    )
+    );
 
     const user = result.rows[0];
 
@@ -18,32 +19,24 @@ const getUser = async (identifier) => {
         return null
     }
 
-    let activeUser = {};
-
     if (user.role == 'teacher' || user.role == 'dean') {
-        result = await pool.query(
-            `SELECT t.emp_id, d.dept_name, t.designation FROM teachers t JOIN departments d ON t.dept_code = d.dept_code WHERE t.user_id=$1`, [user.unique_id]
-        );
-        const teacher = result.rows[0];
-        if (!teacher) {
+        if (!user.emp_id || !user.dept_name) {
             return null
         }
 
-        activeUser = {
-            empId: teacher.emp_id,
+        return {
+            empId: user.emp_id,
             role: user.role,
             prefix: user.prefix,
             name: user.name,
-            dept: teacher.dept_name,
+            dept: user.dept_name,
             program: "MCA",
             mail: user.mail_id,
-            designation: teacher.designation
+            designation: user.designation
         };
-
     }
-    
 
-    return activeUser;
+    return {};
 };
 
 export default getUser;

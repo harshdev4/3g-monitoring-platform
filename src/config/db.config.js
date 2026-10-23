@@ -9,9 +9,11 @@ const pool = globalForPg.pgPool || new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
-  connectionTimeoutMillis: 10000,
+  // Allow hosted databases time to wake from an idle/cold state.
+  connectionTimeoutMillis: Number(process.env.PG_CONNECTION_TIMEOUT_MS) || 30000,
   idleTimeoutMillis: 30000,
   max: 5,
+  keepAlive: true,
 });
 
 if (process.env.NODE_ENV !== "production") {

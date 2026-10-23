@@ -253,10 +253,11 @@ export const getStudentProgressionHistory = async (filter) => {
   `;
 
   const { rows } = await pool.query(query, [
-    currentSemester,
+    semesterNumber,
     section,
     courses,
-    academicYear ?? null,
+    semesterNumber,
+    rollNo,
   ]);
 
   return rows;
