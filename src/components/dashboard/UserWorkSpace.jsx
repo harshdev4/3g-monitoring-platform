@@ -31,7 +31,7 @@ const UserWorkSpace = ({
           <button
             type="button"
             onClick={onAction}
-            className="w-fit shrink-0 rounded-md bg-[#2563EB] px-4 py-2 text-xs font-medium text-white hover:bg-[#1D4ED8]"
+            className="w-fit shrink-0 rounded-md cursor-pointer bg-[#2563EB] px-4 py-2 text-xs font-medium text-white hover:bg-[#1D4ED8]"
           >
             {actionLabel}
           </button>

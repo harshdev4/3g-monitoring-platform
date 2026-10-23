@@ -2,11 +2,29 @@
 const StudentCard = ({ student }) => {
   if (!student) return null;
 
-  const initials = student.name
+  const initials = (student.name ?? "Student")
     .split(" ")
     .map((part) => part[0])
     .slice(0, 2)
-    .join("");
+    .join("")
+    .toUpperCase();
+
+  const rollNo = student.university_roll_no ?? student.rollNo ?? "—";
+  const className =
+    student.className ??
+    (student.section ? `MCA-${student.section}` : "—");
+
+  const assessment =
+    student.three_g_category ?? student.assessment ?? "Not assessed";
+
+  const assessmentStyle =
+    assessment === "Gallant"
+      ? "bg-[#E5F8EF] text-[#14965B]"
+      : assessment === "Growing"
+        ? "bg-[#FFF5DF] text-[#B77905]"
+        : assessment === "Gradual"
+          ? "bg-[#FFF0F0] text-[#E5484D]"
+          : "bg-gray-100 text-gray-600";
 
   return (
     <section className="rounded-lg border border-[#E5EAF1] bg-white p-3 sm:p-4">
@@ -19,38 +37,29 @@ const StudentCard = ({ student }) => {
           {initials}
         </div>
 
-        {/* Student information */}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-[#20375D]">
-            {student.name} · {student.department}
+            {student.name ?? "—"}
           </p>
 
           <p className="mt-1 text-xs text-[#7183A3]">
-            {student.className} · Enrollment MCA/2026/{student.rollNo} ·
-            Faculty: {student.faculty}
+            {className} · Enrollment: {rollNo}
           </p>
 
           <p className="mt-1 break-words text-[11px] text-[#7183A3]">
-            {student.email} · Previous semester: Not applicable — new admission
+            Semester {student.semester ?? "—"} · Previous semester: Not available
           </p>
         </div>
 
-        {/* Assessment status */}
-        <div className="flex shrink-0 flex-col items-start gap-1 sm:w-[100px]">
+        <div className="flex shrink-0 flex-col items-start gap-1 sm:w-[120px]">
           <span
-            className={`rounded-md px-2 py-1 text-xs font-medium ${
-              student.assessment === "Gallant"
-                ? "bg-[#E5F8EF] text-[#14965B]"
-                : student.assessment === "Growing"
-                  ? "bg-[#FFF5DF] text-[#B77905]"
-                  : "bg-[#FFF0F0] text-[#E5484D]"
-            }`}
+            className={`rounded-md px-2 py-1 text-xs font-medium ${assessmentStyle}`}
           >
-            • {student.assessment}
+            • {assessment}
           </span>
 
-          <p className="text-[11px] leading-3 text-[#7183A3]">
-            Current aggregate · MSE-I
+          <p className="text-[11px] leading-4 text-[#7183A3]">
+            Current assessment category
           </p>
         </div>
       </div>

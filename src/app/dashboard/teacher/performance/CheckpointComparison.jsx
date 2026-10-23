@@ -69,7 +69,7 @@ useEffect(() => {
         throw new Error("Failed to fetch checkpoint data");
       }
 
-      const data = await response.json();
+      const data = await response.json();  
       setRecords(data.students ?? []);
     } catch (error) {
       if (error.name !== "AbortError") {

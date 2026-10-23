@@ -1,7 +1,8 @@
-"use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import {
+  getStudentProgressionHistory,
+} from "@/app/api/teachers/getProgressionData";
+import getDashboardStudents from "@/app/api/teachers/getDashboardStudents";
 import Header from "@/components/dashboard/Header";
 import UserWorkSpace from "@/components/dashboard/UserWorkSpace";
 import StudentCard from "./fragments/StudentCard";
@@ -13,142 +14,285 @@ import AssignedActions from "./fragments/AssignedActions";
 import EvidenceSubmissions from "./fragments/EvidenceSubmissions";
 import AttendanceSummary from "./fragments/AttendanceSummary";
 import TeacherObservations from "./fragments/TeacherObservations";
-import useFilterStudentsStore from "@/store/useFilterStudentsStore";
-// Temporary mock data
-const history = [
-  { checkpoint: "Baseline · 12 Aug", category: "Gradual", marks: 34 },
-  { checkpoint: "MSE-I · 10 Sep", category: "Gradual", marks: 38 },
-  { checkpoint: "MSE-II · 04 Oct", category: "Gradual", marks: 32 },
-];
 
-const metrics = [
-  {
-    label: "DBMS",
-    value: "32%",
-    description: "MSE-II · 04 oct 2026 ",
-  },
-  {
-    label: "Attendance",
-    value: "62%",
-    description: "31 of 50 sessions",
-  },
-  {
-    label: "Assigned actions",
-    value: 4,
-    description: "1 approved · 2 pending · 1 under review",
-  },
-  {
-    label: "Evidence submitted",
-    value: 3,
-    description: "1 approved · 1 under review · 1 rejected",
-  },
-];
 
-export default function StudentDetailsPage() {
-  const { rollNo } = useParams();
-  const router = useRouter();
-  const students = useFilterStudentsStore((state) => state.students);
-  const student = students.find((item) => item.university_roll_no == String(rollNo));
+export default async function StudentDetailsPage({
+  params,
+  searchParams,
+}) {
+  const { rollNo } = await params;
+  const filters = await searchParams;
 
-  if (!student) {
+  const semester = filters.semester;
+  const className = filters.className;
+  const courses = filters.courses;
+  const assessment = filters.assessment;
+
+  let student = null;
+  let history = [];
+
+  let errorMessage = null;
+
+  try {
+    if (!semester || !className || !courses || !assessment) {
+      errorMessage =
+        "Required dashboard filters are missing. Return to the dashboard and select a semester, class, course, and assessment.";
+    } else {
+      const students = await getDashboardStudents({
+        semester,
+        className,
+        courses,
+        assessment,
+      });
+
+      student =
+        students.find(
+          (item) =>
+            String(item.university_roll_no) === String(rollNo)
+        ) ?? null;
+
+      if (student) {
+        history = await getStudentProgressionHistory({
+          semester,
+          className,
+          courses,
+          rollNo,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error loading student details:", error);
+
+    errorMessage =
+      "Unable to load student details. Please check the selected filters and try again.";
+  }
+
+  if (errorMessage || !student) {
     return (
       <div className="min-h-screen bg-[#F8FAFC]">
         <Header />
-        <main className="p-5">
-          <button
-            onClick={() => router.back()}
-            className="mb-4 flex items-center gap-2 text-sm text-blue-600"
-          >
-            <ArrowLeft size={16} />
-            Go back
-          </button>
 
-          <p className="rounded-lg border bg-white p-6 text-sm text-gray-600">
-            No student found with roll number {rollNo}.
-          </p>
+        <main className="p-5">
+          <div className="rounded-lg border border-slate-200 bg-white p-6">
+            <h2 className="text-base font-semibold text-[#102746]">
+              {errorMessage
+                ? "Unable to load student"
+                : "Student not found"}
+            </h2>
+
+            <p className="mt-2 text-sm text-gray-600">
+              {errorMessage ??
+                `No student with roll number ${rollNo} was found for the selected filters.`}
+            </p>
+          </div>
         </main>
       </div>
     );
   }
+
+  // Validate marks before calculating the percentage.
+  
+  // Attendance is already stored as a percentage.
+  const attendanceAvailable =
+    student.attendance_pct !== null &&
+    student.attendance_pct !== undefined &&
+    student.attendance_pct !== "" &&
+    Number.isFinite(Number(student.attendance_pct));
+
+  const attendancePercentage = attendanceAvailable
+    ? Number(student.attendance_pct)
+    : null;
+
+  const subjectName =
+    filters.courseName || courses || "Selected subject";
+
+ 
+
+ 
+
+  const assessmentConfig = [
+
+    { label: "MSE 1", type: "mse-1" },
+    { label: "MSE 2", type: "mse-2" },
+    { label: "ESE", type: "ese" },
+  ];
+
+  const orderedHistory = assessmentConfig.map((checkpoint) => {
+    const record = history.find(
+      (item) => item.checkpoint === checkpoint.label
+    );
+
+    return {
+      ...checkpoint,
+      marks: record?.marks ?? null,
+      max_mark: record?.max_mark ?? null,
+    };
+  });
+
+  
+const latestAssessment = [...orderedHistory]
+  .reverse()
+  .find((item) => {
+    if (
+      item.marks == null ||
+      item.max_mark == null ||
+      item.marks === "" ||
+      item.max_mark === ""
+    ) {
+      return false;
+    }
+
+    const marks = Number(item.marks);
+    const maxMarks = Number(item.max_mark);
+
+    return (
+      Number.isFinite(marks) &&
+      Number.isFinite(maxMarks) &&
+      maxMarks > 0
+    );
+  });
+
+const marksAvailable = Boolean(latestAssessment);
+
+const obtainedMarks = marksAvailable
+  ? Number(latestAssessment.marks)
+  : null;
+
+const maximumMarks = marksAvailable
+  ? Number(latestAssessment.max_mark)
+  : null;
+
+const marksPercentage = marksAvailable
+  ? (obtainedMarks / maximumMarks) * 100
+  : null;
+
+const assessmentName = latestAssessment?.label ?? "Assessment";
+   
+   const metrics = [
+    {
+      label: subjectName,
+      value: marksAvailable
+        ? `${obtainedMarks}/${maximumMarks}`
+        : "N/A",
+      description:
+        marksPercentage !== null
+          ? `${marksPercentage.toFixed(1)}% in ${assessmentName}`
+          : "Marks unavailable for this assessment",
+    },
+    {
+      label: "Attendance",
+      value:
+        attendancePercentage !== null
+          ? `${attendancePercentage.toFixed(1)}%`
+          : "N/A",
+      description: "",
+    },
+    {
+      label: "Assigned actions",
+      value: "N/A",
+      description: "Backend data not available",
+    },
+    {
+      label: "Evidence submitted",
+      value: "N/A",
+      description: "Backend data not available",
+    },
+  ];
+
+  const progressionLabels = orderedHistory.map(
+    (item) => item.label
+  );
+
+  const progressionSeries = [
+    {
+      label: "Student marks (%)",
+      color: "#2563EB",
+      data: orderedHistory.map((item) => {
+        if (
+          item.marks == null ||
+          item.max_mark == null ||
+          item.marks === "" ||
+          item.max_mark === ""
+        ) {
+          return null;
+        }
+
+        const marks = Number(item.marks);
+        const maxMarks = Number(item.max_mark);
+
+        if (
+          !Number.isFinite(marks) ||
+          !Number.isFinite(maxMarks) ||
+          maxMarks <= 0
+        ) {
+          return null;
+        }
+
+        return Number(((marks / maxMarks) * 100).toFixed(2));
+      }),
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <Header />
 
       <main className="p-5">
-        {/* <button
-          onClick={() => router.back()}
-          className="mb-4 flex items-center gap-2 text-[10px] text-[#2563EB]"
-        >
-          <ArrowLeft size={12} />
-          Back to Students
-        </button> */}
-
         <UserWorkSpace
           user="Teacher"
-          pageTitle={`${student.name}`}
-          description={`Roll ${student.rollNo} · ${student.className} · Semester ${student.semester} · Academic Year 2026–27`}
+          pageTitle={student.name}
+          description={`Roll ${student.university_roll_no} · MCA-${student.section} · Semester ${student.semester} · Academic Year 2026–27`}
           showAction
           actionLabel="Assign action"
-          onAction={() => console.log("Assign support action clicked")}
           showWelcome={false}
         />
+
         <div className="mt-4">
           <StudentCard student={student} />
         </div>
+
         <div className="mt-4">
           <StudentStatusCard
-            subject={student.subject}
-            marks={student.marks}
-            exam={student.exam}
-            attendance={student.attendance}
+            subject={subjectName}
+            marks={obtainedMarks}
+            maxMarks={maximumMarks}
+            exam={assessmentName}
+            attendance={attendancePercentage}
           />
         </div>
+
         <div className="mt-4">
           <MetricCards metrics={metrics} />
         </div>
+
         <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-          <CategoryProgression history={history} />
+          <CategoryProgression
+            history={history}
+            subject={subjectName}
+          />
 
           <ProgressionCard
-            subtitle="DBMS marks (%) · Actual assessments and next target"
-            labels={["Baseline", "MSE-I", "MSE-II", "Target"]}
-            series={[
-              {
-                label: "DBMS",
-                data: [34, 38, 32, 40],
-                color: "#2563EB",
-              },
-            ]}
-            footer="Baseline 34% → MSE-I 38% → MSE-II 32% · Target 40%"
+            individualMode
+            subtitle={`${subjectName} · ${student.name} (${student.university_roll_no})`}
+            labels={progressionLabels}
+            series={progressionSeries}
+            footer="Student marks percentage across assessment."
           />
         </div>
+
         <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-          <AssignedActions
-            actions={student.actions}
-            onViewAll={() => console.log("View all assigned actions")}
-          />
+          <AssignedActions actions={student.actions ?? []} />
 
           <EvidenceSubmissions
-            submissions={student.submissions}
-            onViewAll={() => console.log("View evidence and review history")}
+            submissions={student.submissions ?? []}
           />
 
           <AttendanceSummary
-            subject="DBMS"
-            attended={31}
-            total={50}
-            minimumRequired={75}
-            recentAttended={3}
-            recentTotal={5}
-            followUpDate="06 Oct"
-            onViewRecord={() => console.log("View attendance record")}
+            subject={subjectName}
+            attendance={attendancePercentage}
           />
 
-          <TeacherObservations
-            onAddObservation={() => console.log("Add observation")}
-            onScheduleFollowUp={() => console.log("Schedule follow-up")}
-          />
+          <TeacherObservations />
         </div>
       </main>
     </div>

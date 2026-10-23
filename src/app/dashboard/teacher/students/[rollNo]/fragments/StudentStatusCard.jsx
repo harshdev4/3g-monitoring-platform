@@ -4,24 +4,68 @@ import { Info } from "lucide-react";
 const StudentStatusCard = ({
   subject,
   marks,
+  maxMarks,
   exam,
   trend,
   previousAssessment,
   attendance,
 }) => {
+  const numericMarks = Number(marks);
+  const numericMaxMarks = Number(maxMarks);
+  const numericAttendance = Number(attendance);
+  const numericTrend = Number(trend);
+
+  const validMarks =
+    marks !== null &&
+    marks !== undefined &&
+    marks !== "" &&
+    Number.isFinite(numericMarks);
+
+  const validMaxMarks =
+    maxMarks !== null &&
+    maxMarks !== undefined &&
+    maxMarks !== "" &&
+    Number.isFinite(numericMaxMarks) &&
+    numericMaxMarks > 0;
+
+  const validAttendance =
+    attendance !== null &&
+    attendance !== undefined &&
+    attendance !== "" &&
+    Number.isFinite(numericAttendance);
+
+  const validTrend =
+    trend !== null &&
+    trend !== undefined &&
+    trend !== "" &&
+    Number.isFinite(numericTrend);
+
+  const percentage =
+    validMarks && validMaxMarks
+      ? (numericMarks / numericMaxMarks) * 100
+      : validMarks
+        ? numericMarks
+        : null;
+
   const needsAttention =
-    marks < 40 ||
-    attendance < 75 ||
-    trend <= -5;
+    (percentage !== null && percentage < 40) ||
+    (validAttendance && numericAttendance < 75) ||
+    (validTrend && numericTrend <= -5);
 
   const title = needsAttention
-    ? `Needs attention in ${subject}`
-    : `Student is on track`;
+    ? `Needs attention${subject ? ` in ${subject}` : ""}`
+    : "Student is on track";
 
-  const trendDescription =
-    trend < 0
-      ? `decline of ${Math.abs(trend)} points`
-      : `improvement of ${trend} points`;
+  const trendDescription = validTrend
+    ? numericTrend < 0
+      ? `decline of ${Math.abs(numericTrend)} points`
+      : `improvement of ${numericTrend} points`
+    : null;
+
+  const assessmentDescription =
+    percentage !== null
+      ? `${percentage.toFixed(1)}%`
+      : "Marks unavailable";
 
   return (
     <section
@@ -49,10 +93,16 @@ const StudentStatusCard = ({
         </h3>
 
         <p className="mt-0.5 text-[12px] leading-5 text-[#7183A3]">
-          {marks}% in {exam} · {trendDescription} from{" "}
-          {previousAssessment} · attendance {attendance}%,{" "}
-          {attendance < 75 ? "below" : "meeting"} the{" "}
-          {75}% threshold.
+          {assessmentDescription}
+          {exam ? ` in ${exam.toUpperCase()}` : ""}
+          {trendDescription && previousAssessment
+            ? ` · ${trendDescription} from ${previousAssessment}`
+            : ""}
+          {validAttendance
+            ? ` · attendance ${numericAttendance.toFixed(2)}%, ${
+                numericAttendance < 75 ? "below" : "meeting"
+              } the 75% threshold.`
+            : " · Attendance data unavailable."}
         </p>
       </div>
     </section>

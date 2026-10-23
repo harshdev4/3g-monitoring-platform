@@ -84,7 +84,6 @@ const getDashboardStudents = async (filter) => {
         a.attendance_pct,
         a.max_mark,
         a.obtained_mark,
-
         CASE
           WHEN a.obtained_mark IS NULL THEN NULL
           ELSE DENSE_RANK() OVER (

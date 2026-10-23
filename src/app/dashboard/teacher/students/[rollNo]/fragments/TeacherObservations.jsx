@@ -389,8 +389,7 @@ const TeacherObservations = ({
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="rounded-md border border-[#E1E7F0] flex
-            flex-row gap-2 bg-white px-3 py-2 text-xs font-semibold text-[#20375D] hover:bg-[#F7F9FC]"
+            className="rounded-md border border-[#E1E7F0] flex flex-row gap-2 bg-white px-3 py-2 text-xs font-semibold text-[#20375D] hover:bg-[#F7F9FC]"
           >
               <Plus size={15} />
              Add observation
