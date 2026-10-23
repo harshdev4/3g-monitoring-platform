@@ -11,13 +11,60 @@ export default function ViewUploadHistory({ onBackToUpload, historyData }) {
   const successCount = historyData.filter(item => item.status === "Success").length;
   const partialCount = historyData.filter(item => item.status === "Partial").length;
   const failedCount = historyData.filter(item => item.status === "Failed").length;
-const filterDataHistory = [
-  { id: "class", label: "Class / Section", defaultOption: "All assigned classes" },
-  { id: "subject", label: "Subject", defaultOption: "All subjects" },
-  { id: "assessment", label: "Assessment", defaultOption: "All assessments" },
-  { id: "status", label: "Import status", defaultOption: "All statuses" },
-  { id: "dateRange", label: "Date range", defaultOption: "Aug-Oct 2026" },
-];
+
+  
+  const filterDataHistory = [
+    { id: "class", label: "Class / Section", defaultOption: "All assigned classes" },
+    { id: "subject", label: "Subject", defaultOption: "All subjects" },
+    { id: "assessment", label: "Assessment", defaultOption: "All assessments" },
+    { id: "status", label: "Import status", defaultOption: "All statuses" },
+    { id: "dateRange", label: "Date range", defaultOption: "Aug-Oct 2026" },
+  ];
+
+  // Intercepts the Cloudinary file, formats the roll number with 'ID-', and forces .csv download
+  const handleHistoryDownload = async (fileUrl, fileName) => {
+    try {
+      const response = await fetch(fileUrl);
+      const text = await response.text();
+
+      const lines = text.split('\n');
+      // const formattedLines = lines.map((line, index) => {
+      //   if (index === 0 || !line.trim()) return line;
+      //   const cols = line.split(',');
+      //   if (cols.length > 0 && cols[0]) {
+      //    const rawRoll = cols[0].replace(/["']/g, '').replace('ID-', '').trim();
+      //     cols[0] = `"${rawRoll}"`; 
+      //   }
+      //   return cols.join(',');
+      // });
+      const formattedLines = lines.map((line, index) => {
+        if (index === 0 || !line.trim()) return line;
+        const cols = line.split(',');
+        if (cols.length > 0 && cols[0]) {
+          const rawRoll = cols[0].replace(/["']/g, '').replace('ID-', '').trim();
+          // Applies the invisible formula trick to the history downloads
+          cols[0] = `="${rawRoll}"`; 
+        }
+        return cols.join(',');
+      });
+
+      const finalCSV = formattedLines.join('\n');
+      const blob = new Blob(['\uFEFF' + finalCSV], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = url;
+      const safeName = fileName ? fileName.replace('.csv', '') : 'import';
+      link.download = `${safeName}.csv`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      window.open(fileUrl, "_blank"); // Fallback
+    }
+  };
+
   return (
     <>
     <Header/>
@@ -44,21 +91,20 @@ const filterDataHistory = [
         {/* FILTERS & SEARCH */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-  {filterDataHistory.map((filter) => (
-    <div key={filter.id}>
-      <label className="block text-[11px] font-semibold text-slate-600 mb-1.5">
-        {filter.label}
-      </label>
-      <select 
-        name={filter.id}
-        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-[12px] text-slate-700 outline-none focus:border-blue-500 bg-white"
-      >
-        <option value="">{filter.defaultOption}</option>
-       
-      </select>
-    </div>
-  ))}
-</div>
+            {filterDataHistory.map((filter) => (
+              <div key={filter.id}>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1.5">
+                  {filter.label}
+                </label>
+                <select 
+                  name={filter.id}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-[12px] text-slate-700 outline-none focus:border-blue-500 bg-white"
+                >
+                  <option value="">{filter.defaultOption}</option>
+                </select>
+              </div>
+            ))}
+          </div>
           
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -125,7 +171,7 @@ const filterDataHistory = [
                       {row.filename}
                     </td>
                     <td className="px-5 py-4">
-                      <div className="text-slate-800">{row.date} - {row.time}</div>
+                      <div className="text-slate-800">{row.date} {row.time}</div>
                       <div className="text-[12px] font-normal text-slate-500">{row.uploader}</div>
                     </td>
                     <td className="px-5 py-4">{row.class}</td>
@@ -138,11 +184,26 @@ const filterDataHistory = [
                       {row.status === "Partial" && <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1.5 w-max"><div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>Partial</span>}
                       {row.status === "Failed" && <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1.5 w-max"><div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>Failed</span>}
                     </td>
+                    
+                    {/* HERE IS THE UPDATED VIEW IMPORT BUTTON */}
                     <td className="px-5 py-4">
-                      <button className="text-blue-600 hover:text-blue-800 font-semibold transition text-[13px]">
-                        {row.status === "Success" ? "View import" : "View errors"}
-                      </button>
+                      {row.fileUrl ? (
+                        <button 
+                          onClick={() => handleHistoryDownload(row.fileUrl, row.filename)}
+                          className="text-blue-600 hover:text-blue-800 font-semibold transition text-[13px] inline-block"
+                        >
+                          {row.status === "Success" ? "View import" : "View errors"}
+                        </button>
+                      ) : (
+                        <button 
+                          disabled
+                          className="text-slate-400 font-semibold transition text-[13px] cursor-not-allowed"
+                        >
+                          No file
+                        </button>
+                      )}
                     </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -173,9 +234,20 @@ const filterDataHistory = [
                 <p className="text-[12px] text-slate-500 mt-1">Source: {historyData[0]?.filename} · Categories recalculated after validation.</p>
               </div>
             </div>
-            <button className="mt-6 w-fit bg-white border border-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-lg text-[13px] shadow-sm hover:bg-slate-50 transition">
-              Download imported records
-            </button>
+            
+            {/* HERE IS THE BOTTOM DOWNLOAD BUTTON UPDATED TOO */}
+            {historyData[0]?.fileUrl ? (
+              <button 
+                onClick={() => handleHistoryDownload(historyData[0].fileUrl, historyData[0].filename)}
+                className="mt-6 w-fit inline-block bg-white border border-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-lg text-[13px] shadow-sm hover:bg-slate-50 transition"
+              >
+                Download imported records
+              </button>
+            ) : (
+              <button disabled className="mt-6 w-fit bg-slate-100 border border-slate-200 text-slate-400 font-semibold px-4 py-2 rounded-lg text-[13px] cursor-not-allowed">
+                No file available
+              </button>
+            )}
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">

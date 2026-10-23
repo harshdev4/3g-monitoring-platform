@@ -13,15 +13,8 @@ import ViewUploadHistory from "./fragments/ViewUploadHistory";
 import axios from "axios";
 import { Toaster, toast } from 'sonner';
 
+import { useEffect } from "react";
 
-// Initial mock history data
-const initialHistory = [
-  { id: "UP-104", filename: "dbms_mse2.xlsx", date: "04 Oct 2026", time: "09:15", uploader: "Prof. Harsh Sharma", class: "1A & 1B", subject: "DBMS", assessment: "MSE-II", rows: 120, errors: 0, status: "Success" },
-  { id: "UP-103", filename: "daa_mse2.csv", date: "03 Oct 2026", time: "14:20", uploader: "Prof. Harsh Sharma", class: "MCA-1A", subject: "DAA", assessment: "MSE-II", rows: 60, errors: 0, status: "Success" },
-  { id: "UP-102", filename: "dbms_draft.xlsx", date: "03 Oct 2026", time: "11:05", uploader: "Prof. Harsh Sharma", class: "1A & 1B", subject: "DBMS", assessment: "MSE-II", rows: 118, errors: 2, status: "Partial" },
-  { id: "UP-101", filename: "os_mse2.csv", date: "02 Oct 2026", time: "10:10", uploader: "Prof. Harsh Sharma", class: "MCA-1B", subject: "Operating Systems", assessment: "MSE-II", rows: 0, errors: 60, status: "Failed" },
-  { id: "UP-100", filename: "dbms_mse1.xlsx", date: "10 Sep 2026", time: "16:00", uploader: "Prof. Harsh Sharma", class: "1A & 1B", subject: "DBMS", assessment: "MSE-I", rows: 120, errors: 0, status: "Success" },
-];
 
 const UploadMarks = () => {
   // Core States
@@ -33,11 +26,27 @@ const UploadMarks = () => {
   const [activeView, setActiveView] = useState('upload');
 
   // History State
-  const [historyData, setHistoryData] = useState(initialHistory);
+  const [historyData, setHistoryData] = useState([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const activeFilters = useTeacherStore((state) => state.filters);
+  const loggedInTeacherId = useTeacherStore((state) =>  state.empId);
+  const [fileBase64, setFileBase64] = useState(null);
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await fetch("/api/marks/"); 
+        if (response.ok) {
+          const data = await response.json();
+          setHistoryData(data.history); 
+        }
+      } catch (error) {
+        console.error("Failed to load history:", error);
+      }
+    };
+    fetchHistory();
+  }, []);
 
   // File Validation Logic
   const runValidation = (rows, overrideMax = maxMarks) => {
@@ -48,6 +57,8 @@ const UploadMarks = () => {
 
 
     });
+
+    
 
     const validatedRows = rows.map((row) => {
       const max = Number(row.maxMarks) || Number(overrideMax);
@@ -102,12 +113,19 @@ const UploadMarks = () => {
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.trim());
         if (cols.length < 6) continue;
-        rawRows.push({ roll: cols[0], name: cols[1], maxMarks: cols[2], marks: cols[3], attendance: cols[4], facultyObservation: cols[5] });
+        const cleanRoll = cols[0].replace(/[="]/g, '').trim();
+        const cleanName = cols[1].replace(/"/g, '').trim();
+        rawRows.push({ roll: cleanRoll, name: cleanName, maxMarks: cols[2], marks: cols[3], attendance: cols[4], facultyObservation: cols[5] });
       }
       runValidation(rawRows, maxMarks);
       setCurrentPhase(3); // Move to Phase 3: Validate & preview
     };
     reader.readAsText(file);
+    const base64Reader = new FileReader();
+    base64Reader.onload = (e) => {
+      setFileBase64(e.target.result);
+    };
+    base64Reader.readAsDataURL(file);
   };
 
   const handleFile = (selectedFile) => {
@@ -127,19 +145,35 @@ const UploadMarks = () => {
       const response = await axios.post("/api/teachers/getStudentForMarks", { filters: activeFilters });
       const students = response.data.students;
 
+      // const csv = [
+      //   "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,Observation",
+      //   ...students.map((student) =>
+      //     [
+      //      `"ID-${student.university_roll_no}"`, 
+      //       `"${(student.name ?? "").replace(/"/g, '""')}"`,
+      //       "",
+      //       "",
+      //       "",
+      //       "",
+      //     ].join(",")
+      //   ),
+      // ].join("\n");
+      
+
+      // const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" }));
       const csv = [
         "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,Observation",
         ...students.map((student) =>
           [
-            `="${student.university_roll_no}"`,
+           `="${student.university_roll_no}"`, 
             `"${(student.name ?? "").replace(/"/g, '""')}"`,
-            "",
-            "",
-            "",
-            "",
+            "", "", "", "",
           ].join(",")
         ),
       ].join("\n");
+
+      // NEW: Add this line!
+      console.log("GENERATED CSV STRING:", csv);
 
       const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" }));
       const link = document.createElement("a");
@@ -178,6 +212,13 @@ const UploadMarks = () => {
           assessment: activeFilters?.assessment,
           academicYear: activeFilters?.academicYear || "2026-27",
         },
+        fileMeta: {
+          fileName: file ? file.name : "marks_upload.csv",
+          errorCount: errorCount,
+          totalRows: parsedData.length,
+          base64Data: fileBase64
+        },
+        teacherId: loggedInTeacherId
       };
 
       console.log(payload);
@@ -212,7 +253,7 @@ const UploadMarks = () => {
         status: "Success",
       };
 
-      setHistoryData([newRecord, ...historyData]);
+      setHistoryData([result.newRecord, ...historyData]);
       setCurrentPhase(4); // Move to Phase 4: Confirm Submission / Success
     }
     catch (err) {
