@@ -20,7 +20,7 @@ const TeacherDashboardLayout = async ({ children }) => {
             <div className="min-h-screen">
                 <Sidebar />
 
-                <main className="min-h-screen lg:ml-64">
+                <main className="min-h-screen pb-20 lg:ml-64 lg:pb-0">
                     {children}
                 </main>
             </div>

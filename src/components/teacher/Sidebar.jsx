@@ -6,15 +6,11 @@ import {
   LayoutDashboard,
   Users,
   Upload,
-  UserRoundX,
   ClipboardList,
-  FileCheck2,
   FileBarChart2,
   UserCircle,
-  MoreHorizontal,
   ChartNoAxesCombined,
   TriangleAlert,
-  GraduationCap,
   CircleHelp,
 } from "lucide-react";
 
@@ -53,11 +49,6 @@ const Sidebar = () => {
       href: "/dashboard/teacher/actions",
     },
     {
-      label: "Evidence / Submissions",
-      icon: FileCheck2,
-      href: "/dashboard/teacher/evidence",
-    },
-    {
       label: "Reports",
       icon: FileBarChart2,
       href: "/dashboard/teacher/reports",
@@ -69,25 +60,21 @@ const Sidebar = () => {
     },
   ];
 
-  const mobileItems = [
-    {
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      href: "/dashboard/teacher",
-    },
-    {
-      label: "Students",
-      icon: Users,
-      href: "/dashboard/teacher/students",
-    },
-    {
-      label: "Evidence",
-      icon: FileCheck2,
-      href: "/dashboard/teacher/evidence",
-    },
-  ];
+  const mobileItems = menuItems.map((item) => ({
+    ...item,
+    fullLabel: item.label,
+    label: {
+      Dashboard: "Home",
+      "Upload Marks": "Upload",
+      Performance: "Perform",
+      "At-Risk Students": "At-Risk",
+      "Activities / Actions": "Actions",
+    }[item.label] || item.label,
+  }));
 
-  const isActive = (href) => pathname === href;
+  const isActive = (href) => href === "/dashboard/teacher"
+    ? pathname === href
+    : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <>
@@ -147,7 +134,7 @@ const Sidebar = () => {
 
       {/* ================= MOBILE BOTTOM BAR ================= */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#E5EAF1] bg-white lg:hidden">
-        <div className="grid h-16 grid-cols-4">
+        <div className="grid h-16 grid-cols-8">
           {mobileItems.map((navItem) => {
             const Icon = navItem.icon;
             const active = isActive(navItem.href);
@@ -156,7 +143,9 @@ const Sidebar = () => {
               <Link
                 key={navItem.href}
                 href={navItem.href}
-                className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+                aria-label={navItem.fullLabel}
+                title={navItem.fullLabel}
+                className={`flex min-w-0 flex-col items-center justify-center gap-1 transition-colors ${
                   active
                     ? "text-[#2563EB]"
                     : "text-[#60708A] hover:text-[#2563EB]"
@@ -167,27 +156,12 @@ const Sidebar = () => {
                   strokeWidth={active ? 2 : 1.7}
                 />
 
-                <span className="text-[8px] font-medium">
+                <span className="max-w-full truncate text-[8px] font-medium">
                   {navItem.label}
                 </span>
               </Link>
             );
           })}
-
-          {/* More */}
-          <button
-            type="button"
-            className="flex flex-col items-center justify-center gap-1 text-[#60708A] transition-colors hover:text-[#2563EB]"
-          >
-            <MoreHorizontal
-              size={18}
-              strokeWidth={1.8}
-            />
-
-            <span className="text-[8px] font-medium">
-              More
-            </span>
-          </button>
         </div>
       </nav>
     </>
