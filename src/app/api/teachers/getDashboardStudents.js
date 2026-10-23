@@ -33,7 +33,7 @@ const getDashboardStudents = async (filter) => {
 
       LEFT JOIN public.student_academic_records sar
         ON s.university_roll_no = sar.student_id
-        AND sar.semester = s.semester
+        AND sar.semester+1 = s.semester
 
       WHERE s.semester = $1
         AND s.section = $2
@@ -65,10 +65,14 @@ const getDashboardStudents = async (filter) => {
   `;
 
     const { rows } = await pool.query(query, [
-      semester,
+      Number(semester),
       section,
       courses
     ]);
+
+    console.log(rows);
+    
+
     return rows;
   }
 

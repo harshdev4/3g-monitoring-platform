@@ -49,7 +49,7 @@ export async function POST(req) {
 
       // 2. Insert record into public.assessments
       await pool.query(
-        `INSERT INTO public.assessments2 (
+        `INSERT INTO public.assessments (
            type, 
            max_mark, 
            obtained_mark, 
