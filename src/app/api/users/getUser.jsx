@@ -1,9 +1,15 @@
 import pool from "@/config/db.config";
 
-const getUser = async (mailId) => {
+const getUser = async (identifier) => {
+    if (!identifier) return null;
+
     let result = await pool.query(
-        `SELECT * FROM users WHERE mail_id=$1`,
-        [mailId]
+        `SELECT u.*
+         FROM users u
+         LEFT JOIN teachers t ON t.user_id = u.unique_id
+         WHERE LOWER(u.mail_id) = LOWER($1) OR t.emp_id = $1
+         LIMIT 1`,
+        [identifier.trim()]
     )
 
     const user = result.rows[0];
@@ -14,7 +20,7 @@ const getUser = async (mailId) => {
 
     let activeUser = {};
 
-    if (user.role == 'teacher') {
+    if (user.role == 'teacher' || user.role == 'dean') {
         result = await pool.query(
             `SELECT t.emp_id, d.dept_name, t.designation FROM teachers t JOIN departments d ON t.dept_code = d.dept_code WHERE t.user_id=$1`, [user.unique_id]
         );

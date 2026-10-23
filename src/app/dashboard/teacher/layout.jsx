@@ -3,9 +3,15 @@ import getUser from "@/app/api/users/getUser";
 import InitializeAssignedCourses from "@/components/mapper/InitializeAssignedCourses";
 import Sidebar from "@/components/teacher/Sidebar";
 import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getTeacherEmailFromSession, SESSION_COOKIE } from "@/lib/auth";
 
 const TeacherDashboardLayout = async ({ children }) => {
-    const teacher = await getUser("annu.yadav@kiet.edu");
+    const cookieStore = await cookies();
+    const teacherEmail = getTeacherEmailFromSession(cookieStore.get(SESSION_COOKIE)?.value);
+    const teacher = teacherEmail ? await getUser(teacherEmail) : null;
+    if (!teacher) redirect("/login");
     const assignedCourses = await getAssignedCourses(teacher.empId);
     return (
         <>

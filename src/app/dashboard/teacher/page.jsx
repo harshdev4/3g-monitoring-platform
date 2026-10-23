@@ -1,4 +1,6 @@
-import getAssignedCourses from "@/app/api/teachers/getAssignedCourses";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getTeacherEmailFromSession, SESSION_COOKIE } from "@/lib/auth";
 import getUser from "@/app/api/users/getUser";
 import Header from "@/components/dashboard/Header";
 import UserWorkSpace from "@/components/dashboard/UserWorkSpace";
@@ -17,10 +19,12 @@ import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer
 
 const page = async () => {
 
-  const teacher = await getUser("annu.yadav@kiet.edu");
+  const cookieStore = await cookies();
+  const teacherEmail = getTeacherEmailFromSession(cookieStore.get(SESSION_COOKIE)?.value);
+  const teacher = teacherEmail ? await getUser(teacherEmail) : null;
 
   if (!teacher) {
-    return <p>User not found.</p>
+    redirect("/login");
   }
 
   const monitoringItems = [

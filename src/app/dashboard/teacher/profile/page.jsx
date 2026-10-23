@@ -6,12 +6,29 @@ import useTeacherStore from '@/store/useTeacherStore';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 const page = () => {
     const teacher = useTeacherStore((state) => state);
     const nameArr = teacher.name.split(" ");
     const shortName = nameArr.map(word => word.slice(0, 1)).slice(0, 2);
     const [assignedCourses, setAssignedCourses] = useState([]);
+    const [isSigningOut, setIsSigningOut] = useState(false);
+    const router = useRouter();
+
+    const handleSignOut = async () => {
+        setIsSigningOut(true);
+        try {
+            const response = await fetch('/api/auth/logout', { method: 'POST' });
+            if (!response.ok) throw new Error('Unable to sign out. Please try again.');
+            useTeacherStore.getState().clearTeacher();
+            router.replace('/login');
+            router.refresh();
+        } catch (error) {
+            toast.error(error.message || 'Unable to sign out. Please try again.');
+            setIsSigningOut(false);
+        }
+    };
 
     useEffect(() => {
         const fetchAssignedCourses = async () => {
@@ -43,7 +60,7 @@ const page = () => {
                     showWelcome={false}
                 />
 
-                <div className='bg-white my-3 p-3 rounded-md'>
+                <div className='bg-white my-3 p-3 rounded-md flex items-center justify-between gap-4'>
                     <h2 className='text-[17px] font-semibold text-navy mb-2'>Teacher profile</h2>
                     <div className='flex gap-3.5'>
                         <div className="rounded-full bg-navy w-17 aspect-square text-white font-inter text-[22px] font-semibold grid place-content-center">
@@ -55,6 +72,14 @@ const page = () => {
                             <h4 className='text-[#66758D] text-xs font-normal'>Faculty ID {teacher.empId}{" . "}{teacher.mail}</h4>
                         </div>
                     </div>
+                    <button
+                        type="button"
+                        onClick={handleSignOut}
+                        disabled={isSigningOut}
+                        className="shrink-0 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {isSigningOut ? 'Signing out…' : 'Sign out'}
+                    </button>
                 </div>
 
                 <div className='bg-white my-3 p-3 rounded-md'>

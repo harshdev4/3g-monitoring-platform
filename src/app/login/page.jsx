@@ -6,15 +6,25 @@ import { Mail, Lock, ArrowRight, BookOpen, BarChart3, ShieldCheck } from "lucide
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate login API call
-    setTimeout(() => {
+    setError("");
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to sign in.");
+      window.location.assign("/dashboard/teacher");
+    } catch (loginError) {
+      setError(loginError.message);
       setIsLoading(false);
-      window.location.href = '/dashboard'; // Route to your teacher workspace
-    }, 1500);
+    }
   };
 
   return (
@@ -32,6 +42,7 @@ export default function LoginPage() {
             <div className="text-slate-300 text-[13px] font-medium tracking-wide uppercase">
               Academic Portal
             </div>
+
           </div>
 
           <h1 className="text-white text-4xl font-bold leading-tight mb-6">
@@ -84,7 +95,7 @@ export default function LoginPage() {
             <p className="text-[12px] font-medium text-slate-500 tracking-wide uppercase mb-2">Teacher Workspace</p>
             <h2 className="text-[28px] font-bold text-slate-800 tracking-tight">Sign in to your account</h2>
             <p className="text-[13px] text-slate-500 mt-2">
-              Enter your faculty credentials to access the dashboard.
+              Enter your faculty email or employee ID to access the dashboard.
             </p>
           </div>
 
@@ -92,7 +103,7 @@ export default function LoginPage() {
             {/* Email Field */}
             <div>
               <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">
-                Email Address or Employee ID
+                Faculty email or employee ID
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -104,47 +115,33 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white shadow-sm"
-                  placeholder="e.g. harsh.sharma@university.edu"
+                  placeholder="e.g. anita.yadav@kiet.edu or 21800"
                 />
               </div>
             </div>
 
-            {/* Password Field */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-[12px] font-semibold text-slate-700">
-                  Password
-                </label>
-                <a href="#" className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition">
-                  Forgot password?
-                </a>
-              </div>
+              <label className="block text-[12px] font-semibold text-slate-700 mb-1.5" htmlFor="password">
+                Password
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-4 w-4 text-slate-400" />
                 </div>
                 <input
+                  id="password"
                   type="password"
                   required
+                  autoComplete="current-password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white shadow-sm"
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                 />
               </div>
             </div>
 
-            {/* Remember Me */}
-            <div className="flex items-center pt-1">
-              <input
-                id="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded cursor-pointer"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-[12px] text-slate-600 cursor-pointer select-none">
-                Remember me for 30 days
-              </label>
-            </div>
+            {error && <p role="alert" className="text-[12px] text-red-600">{error}</p>}
 
             {/* Submit Button */}
             <button

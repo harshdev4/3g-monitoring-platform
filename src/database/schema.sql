@@ -25,6 +25,7 @@ CREATE TABLE public.users (
         CHECK (role IN ('dean', 'teacher', 'student')),
 
     mail_id VARCHAR(255) NOT NULL UNIQUE,
+    password TEXT NOT NULL DEFAULT '12345678',
     phone_number VARCHAR(20),
     name VARCHAR(150) NOT NULL
 );
