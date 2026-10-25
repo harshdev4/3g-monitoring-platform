@@ -26,19 +26,30 @@ const MonitoringCard = ({
                 </p>
               </div>
 
-              <span className="text-xs font-medium text-[#10B981]">
-                {item.status}
-              </span>
+              {item.status && (
+                <span className="text-xs font-medium text-[#10B981]">
+                  {item.status}
+                </span>
+              )}
             </div>
 
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#EEF1F5]">
+            {Number.isFinite(item.progress) && (
               <div
-                className="h-full rounded-full bg-[#2563EB]"
-                style={{
-                  width: item.status,
-                }}
-              />
-            </div>
+                className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#EEF1F5]"
+                role="progressbar"
+                aria-label={`${item.label} completed`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.min(100, Math.max(0, item.progress))}
+              >
+                <div
+                  className="h-full rounded-full bg-[#2563EB]"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, item.progress))}%`,
+                  }}
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>

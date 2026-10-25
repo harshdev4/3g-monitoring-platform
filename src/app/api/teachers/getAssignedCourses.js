@@ -8,7 +8,8 @@ const getAssignedCourses = async (empId) => {
         c.course_name,
         c.course_code,
         ac.section,
-        ac.semester
+        ac.semester,
+        ac.academic_year
       FROM assigned_courses ac
 
       JOIN courses c
@@ -29,7 +30,8 @@ const getAssignedCourses = async (empId) => {
         c.course_name,
         c.course_code,
         ac.section,
-        ac.semester
+        ac.semester,
+        ac.academic_year
 
       ORDER BY
         ac.semester,
@@ -42,6 +44,7 @@ const getAssignedCourses = async (empId) => {
   return result.rows.map((data) => ({
     program: "MCA",
     semester: data.semester,
+    academicYear: data.academic_year,
     className: `MCA-${data.section}`,
     course: data.course_name,
     course_code: data.course_code,

@@ -1,44 +1,41 @@
 "use client";
 
-import useFilterStudentsStore from "@/store/useFilterStudentsStore";
 import useTeacherStore from "@/store/useTeacherStore";
 import MetricCards from "./MetricCards";
 
-const PerformanceMatricSection = () => {
-  const students = useFilterStudentsStore(
-    (state) => state.students
-  );
-
-  const loading = useFilterStudentsStore(
-    (state) => state.loading
-  );
-
+const PerformanceMatricSection = ({ students, loading, error, retry }) => {
   const filters = useTeacherStore((state) => state.filters);
-
-  const validMarks = students.filter(
-    (student) =>
-      Number.isFinite(Number(student.obtained_mark)) &&
-      Number.isFinite(Number(student.max_mark)) &&
-      Number(student.max_mark) > 0
+  const hasRequiredFilters = Boolean(
+    filters.semester &&
+      filters.className &&
+      filters.courses &&
+      filters.assessment
   );
 
-  const averageMarks =
-    validMarks.length > 0
-      ? validMarks.reduce(
-          (sum, student) =>
-            sum +
-            (Number(student.obtained_mark) /
-              Number(student.max_mark)) *
-              100,
-          0
-        ) / validMarks.length
-      : 0;
+  const isPreMse = filters.assessment === "pre-mse";
+  const validMarks = students.filter((student) => {
+    if (isPreMse) {
+      return student.sgpa != null && Number.isFinite(Number(student.sgpa));
+    }
+    return Number.isFinite(Number(student.obtained_mark)) &&
+      Number.isFinite(Number(student.max_mark)) &&
+      Number(student.max_mark) > 0;
+  });
+
+  const averageMarks = validMarks.length > 0
+    ? validMarks.reduce((sum, student) => sum + (
+        isPreMse
+          ? Number(student.sgpa)
+          : (Number(student.obtained_mark) / Number(student.max_mark)) * 100
+      ), 0) / validMarks.length
+    : 0;
 
   // Assumes 40% is the passing threshold.
   const passedStudents = validMarks.filter(
     (student) =>
-      Number(student.obtained_mark) /
-        Number(student.max_mark) >= 0.4
+      isPreMse
+        ? Number(student.sgpa) >= 4
+        : Number(student.obtained_mark) / Number(student.max_mark) >= 0.4
   ).length;
 
   const passPercentage =
@@ -48,6 +45,7 @@ const PerformanceMatricSection = () => {
 
   const validAttendance = students.filter(
     (student) =>
+      !isPreMse &&
       student.attendance_pct != null &&
       student.attendance_pct !== "" &&
       Number.isFinite(Number(student.attendance_pct))
@@ -62,44 +60,35 @@ const PerformanceMatricSection = () => {
         ) / validAttendance.length
       : 0;
 
-  const improvingStudents = students.filter(
-    (student) => student.three_g_category === "Growing"
-  ).length;
-
-  const total = students.length;
-
   const metrics = [
     {
-      label: "Average marks",
-      value: `${averageMarks.toFixed(1)}%`,
-      description: `Across ${validMarks.length} assessed students`,
+      label: isPreMse ? "Average previous SGPA" : "Average marks",
+      value: isPreMse
+        ? `${averageMarks.toFixed(2)} / 10`
+        : `${averageMarks.toFixed(1)}%`,
+      description: `Across ${validMarks.length} students with records`,
       type: "",
       iconClassName: "text-[#2563EB]",
     },
     {
       label: "Pass percentage",
       value: `${passPercentage.toFixed(1)}%`,
-      description: `${passedStudents} of ${validMarks.length} students · ≥40%`,
+      description: isPreMse
+        ? `${passedStudents} of ${validMarks.length} students · SGPA ≥4`
+        : `${passedStudents} of ${validMarks.length} students · ≥40%`,
       type: "",
       iconClassName: "text-[#10B981]",
     },
     {
       label: "Average attendance",
-      value: `${averageAttendance.toFixed(0)}%`,
-      description: `Across ${validAttendance.length} attendance records`,
+      value: isPreMse || validAttendance.length === 0
+        ? "N/A"
+        : `${averageAttendance.toFixed(0)}%`,
+      description: isPreMse
+        ? "Not reported for Pre-MSE"
+        : `Across ${validAttendance.length} attendance records`,
       type: "",
       iconClassName: "text-[#2563EB]",
-    },
-    {
-      label: "Improving students",
-      value: String(improvingStudents),
-      description: `${
-        total > 0
-          ? ((improvingStudents / total) * 100).toFixed(0)
-          : 0
-      }% show positive progress`,
-      type: "",
-      iconClassName: "text-[#F59E0B]",
     },
   ];
 
@@ -107,6 +96,29 @@ const PerformanceMatricSection = () => {
     return (
       <p className="text-sm text-slate-500">
         Loading performance metrics...
+      </p>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+        <p>{error}</p>
+        <button
+          type="button"
+          onClick={retry}
+          className="mt-2 font-semibold underline"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!hasRequiredFilters) {
+    return (
+      <p className="text-sm text-slate-500">
+        Select a semester, class, course, and assessment to view performance metrics.
       </p>
     );
   }

@@ -26,42 +26,47 @@ const getProgressionData = async (filter) => {
   const section = className.replace(/^MCA-/, "");
 
   const query = `
-    WITH pre_mse_ranked AS (
+    WITH pre_mse_students AS (
       SELECT
         'pre-mse'::VARCHAR AS type,
-        sar.student_id,
+        s.university_roll_no AS student_id,
+        sar.backlog,
         sar.sgpa AS score,
-        10::NUMERIC AS max_mark,
-
-        CASE
-          WHEN sar.sgpa IS NULL THEN NULL
-          ELSE DENSE_RANK() OVER (
-            ORDER BY sar.sgpa DESC NULLS LAST
-          )
-        END AS marks_rank
-
-      FROM public.student_academic_records sar
-
-      JOIN public.students s
-        ON s.university_roll_no = sar.student_id
+        10::NUMERIC AS max_mark
+      FROM public.students s
+      JOIN public.course_enrollment ce
+        ON ce.student_id = s.university_roll_no
+        AND ce.course_id = $3
+        AND ce.semester = s.semester
+      LEFT JOIN LATERAL (
+        SELECT sar.sgpa, sar.backlog
+        FROM public.student_academic_records sar
+        WHERE sar.student_id = s.university_roll_no
+          AND sar.semester = s.semester - 1
+          AND ($4::VARCHAR IS NULL OR sar.academic_year = $4)
+        ORDER BY sar.created_at DESC, sar.id DESC
+        LIMIT 1
+      ) sar ON TRUE
 
       WHERE s.semester = $1
         AND s.section = $2
-        AND sar.semester = $1 - 1
-        AND ($4::VARCHAR IS NULL OR sar.academic_year = $4)
-        AND EXISTS (
-          SELECT 1
-          FROM public.course_enrollment ce
-          WHERE ce.student_id = s.university_roll_no
-            AND ce.course_id = $3
-            AND ce.semester = s.semester
-        )
+    ),
+
+    pre_mse_ranked AS (
+      SELECT
+        *,
+        CASE
+          WHEN score IS NULL THEN NULL
+          ELSE DENSE_RANK() OVER (ORDER BY score DESC NULLS LAST)
+        END AS marks_rank
+      FROM pre_mse_students
     ),
 
     assessment_ranked AS (
       SELECT
         a.type,
         a.student_id,
+        FALSE AS backlog,
         a.obtained_mark AS score,
         a.max_mark,
 
@@ -95,8 +100,10 @@ const getProgressionData = async (filter) => {
       SELECT
         type,
         student_id,
+        backlog,
 
         CASE
+          WHEN type = 'pre-mse' AND backlog THEN 'Gradual'
           WHEN marks_rank IS NULL THEN NULL
           WHEN marks_rank <= 10 THEN 'Gallant'
           WHEN score / NULLIF(max_mark, 0) < 0.40 THEN 'Gradual'

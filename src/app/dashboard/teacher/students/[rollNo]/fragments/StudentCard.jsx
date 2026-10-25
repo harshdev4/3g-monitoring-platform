@@ -47,7 +47,7 @@ const StudentCard = ({ student }) => {
           </p>
 
           <p className="mt-1 break-words text-[11px] text-[#7183A3]">
-            Semester {student.semester ?? "—"} · Previous semester: Not available
+            Semester {student.semester ?? "—"} · Previous SGPA: {student.previous_sgpa ?? "N/A"} · Backlog: {student.previous_record_id ? (student.backlog ? "Yes" : "No") : "N/A"}
           </p>
         </div>
 

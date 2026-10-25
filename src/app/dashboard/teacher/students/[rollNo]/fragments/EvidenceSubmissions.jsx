@@ -20,6 +20,9 @@ const EvidenceSubmissions = ({
       </h2>
 
       <div className="mt-3 space-y-4">
+        {visibleSubmissions.length === 0 && (
+          <p className="text-xs text-slate-500">No evidence has been submitted for this course.</p>
+        )}
         {visibleSubmissions.map((submission) => (
           <div key={submission.id}>
             <p className="break-words text-[13px] font-semibold text-[#20375D]">
@@ -35,6 +38,16 @@ const EvidenceSubmissions = ({
                 ? ` · ${submission.version}`
                 : ""}
             </p>
+            {submission.evidenceUrl && (
+              <a
+                href={submission.evidenceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-block text-[11px] font-medium text-blue-600 hover:underline"
+              >
+                Open submitted evidence
+              </a>
+            )}
           </div>
         ))}
       </div>

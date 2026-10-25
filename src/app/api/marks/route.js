@@ -1,14 +1,32 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import getUser from "@/app/api/users/getUser";
 import pool from "@/config/db.config";
 import cloudinary from "@/config/cloudinary.config";
+import { getTeacherEmailFromSession, SESSION_COOKIE } from "@/lib/auth";
+
+async function getAuthenticatedTeacher() {
+  const cookieStore = await cookies();
+  const email = getTeacherEmailFromSession(
+    cookieStore.get(SESSION_COOKIE)?.value
+  );
+  const teacher = email ? await getUser(email) : null;
+  return teacher?.role === "teacher" && teacher.empId ? teacher : null;
+}
+
 export async function POST(req) {
+  let client;
+  let transactionStarted = false;
+  let fileArchiveWarning = null;
+
   try {
     const body = await req.json();
   
-    const { marksData, filters, fileMeta,teacherId } = body;
-    if (!teacherId) {
+    const { marksData, filters, fileMeta } = body;
+    const teacher = await getAuthenticatedTeacher();
+    if (!teacher) {
       return NextResponse.json(
-        { error: "Unauthorized: No teacher ID found in request." },
+        { error: "You must be signed in as a teacher to upload marks." },
         { status: 401 }
       );
     }
@@ -27,40 +45,72 @@ export async function POST(req) {
       );
     }
 
-  // 1. Upload to Cloudinary
-    let fileUrl = null;
-    if (fileMeta?.base64Data) {
-      // Extract the file extension (e.g., "csv" or "xlsx")
-      const fileExt = fileMeta.fileName.split('.').pop();
-      // Extract the base name without the extension
-      const baseName = fileMeta.fileName.substring(0, fileMeta.fileName.lastIndexOf('.')) || fileMeta.fileName;
-
-      const uploadResponse = await cloudinary.uploader.upload(fileMeta.base64Data, {
-        resource_type: "raw", // Required for non-image files
-        folder: "3gs_imports",
-        // Include the extension at the end of the public_id so Cloudinary knows the file type
-        public_id: `${baseName}_${Date.now()}.${fileExt}` 
-      });
-      fileUrl = uploadResponse.secure_url;
-    }
-
     const type = filters.assessment;
     const semester = Number(filters.semester);
     const academicYear = filters.academicYear;
     const courseId = filters.courseCode;
+    const section = String(filters.className).replace(/^MCA-/, "");
+    const assignmentResult = await pool.query(
+      `
+        SELECT 1
+        FROM public.assigned_courses
+        WHERE emp_id = $1
+          AND course_id = $2
+          AND semester = $3
+          AND section = $4
+          AND academic_year = $5
+        LIMIT 1
+      `,
+      [teacher.empId, courseId, semester, section, academicYear]
+    );
+    if (assignmentResult.rowCount === 0) {
+      return NextResponse.json(
+        { error: "You are not assigned to this course, class, semester, and academic year." },
+        { status: 403 }
+      );
+    }
+
+    let fileUrl = null;
+    if (fileMeta?.base64Data) {
+      try {
+        const fileName = String(fileMeta.fileName || "marks_upload.xlsx");
+        const extension = fileName.includes(".")
+          ? fileName.split(".").pop().toLowerCase()
+          : "xlsx";
+        const baseName = fileName.substring(0, fileName.lastIndexOf(".")) || fileName;
+        const uploadResponse = await cloudinary.uploader.upload(
+          fileMeta.base64Data,
+          {
+            resource_type: "raw",
+            folder: "3gs_imports",
+            public_id: `${baseName}_${Date.now()}.${extension}`,
+          }
+        );
+        fileUrl = uploadResponse.secure_url;
+      } catch (archiveError) {
+        console.error("Assessment workbook archival failed:", {
+          name: archiveError.name,
+          httpCode: archiveError.http_code,
+        });
+        fileArchiveWarning =
+          "Marks will be saved, but the source workbook could not be archived. Check the Cloudinary credentials and try uploading the workbook again to retain a downloadable copy.";
+      }
+    }
 
     
-    await pool.query("BEGIN");
+    client = await pool.connect();
+    await client.query("BEGIN");
+    transactionStarted = true;
 
-   const importRes = await pool.query(
+   const importRes = await client.query(
       `INSERT INTO public.assessment_imports (
         file_name, uploaded_by_emp_id, course_code, semester, academic_year, target_sections, assessment_type, total_rows, error_count, status,file_url
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11)
       RETURNING import_id, uploaded_at;`,
       [
-        fileMeta?.fileName || "marks_upload.csv",
-        teacherId, // <-- Replaced "4495" with the dynamic variable
+        fileMeta?.fileName || "marks_upload.xlsx",
+        teacher.empId,
         courseId,
         semester,
         academicYear,
@@ -81,9 +131,13 @@ export async function POST(req) {
       const obtainedMark = record.absent === "Yes" ? null : Number(record.correctedMarks || record.marks);
       const maxMark = Number(record.maxMarks) || 100;
       const attendancePct = record.attendance ? Number(record.attendance) : null;
-      const Observation = record.facultyObservation || record.observation; 
+      const observationValue = record.facultyObservation ?? record.observation;
+      const observation =
+        typeof observationValue === "string" && observationValue.trim()
+          ? observationValue.trim()
+          : null;
 
-      const enrollmentCheck = await pool.query(
+      const enrollmentCheck = await client.query(
         `SELECT 1 FROM public.course_enrollment 
          WHERE course_id = $1 AND student_id = $2 AND semester = $3 AND academic_year = $4;`,
         [courseId, studentRoll, semester, academicYear]
@@ -95,7 +149,7 @@ export async function POST(req) {
       }
 
     
-      await pool.query(
+      await client.query(
         `INSERT INTO public.assessments (
            type, 
            max_mark, 
@@ -114,7 +168,7 @@ export async function POST(req) {
           maxMark,
           obtainedMark,
           attendancePct,
-          Observation,
+          observation,
           courseId,
           studentRoll,
           semester,
@@ -125,18 +179,21 @@ export async function POST(req) {
     }
 
   
-    await pool.query("COMMIT");
+    await client.query("COMMIT");
+    transactionStarted = false;
 
     const d = new Date(uploadedAt);
     const newRecord = {
       id: "UP-" + importId,
-      filename: fileMeta?.fileName || "marks_upload.csv",
+      filename: fileMeta?.fileName || "marks_upload.xlsx",
       date: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       time: d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-      uploader: "Prof. Harsh Sharma", 
-      class: filters.className || "All assigned classes",
+      uploadedAt,
+      uploader: [teacher.prefix, teacher.name].filter(Boolean).join(" "),
+      class: filters.className,
       subject: courseId,
       assessment: type,
+      academicYear,
       rows: marksData.length,
       errors: fileMeta?.errorCount || 0,
       status: "Success",
@@ -146,28 +203,50 @@ export async function POST(req) {
     return NextResponse.json({
       success: true,
       message: `${marksData.length} records successfully written to PostgreSQL.`,
+      warning: fileArchiveWarning,
       newRecord 
     });
   } catch (error) {
-    await pool.query("ROLLBACK");
+    if (client && transactionStarted) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("Failed to roll back marks upload:", rollbackError);
+      }
+    }
     console.error("Database Insert Error:", error);
     return NextResponse.json(
       { error: "Failed to upload marks: " + error.message },
       { status: 500 }
     );
+  } finally {
+    client?.release();
   }
 }
 
 
-export async function GET(req) {
+export async function GET() {
   try {
+    const teacher = await getAuthenticatedTeacher();
+    if (!teacher) {
+      return NextResponse.json(
+        { error: "You must be signed in as a teacher to view upload history." },
+        { status: 401 }
+      );
+    }
+
     const result = await pool.query(`
       SELECT 
-        import_id, file_name, uploaded_by_emp_id, target_sections, 
-        course_code, assessment_type, total_rows, error_count, status, uploaded_at,file_url
-      FROM public.assessment_imports
-      ORDER BY uploaded_at DESC
-    `);
+        ai.import_id, ai.file_name, ai.uploaded_by_emp_id, ai.target_sections,
+        ai.course_code, ai.semester, ai.academic_year, ai.assessment_type,
+        ai.total_rows, ai.error_count, ai.status, ai.uploaded_at, ai.file_url,
+        u.prefix, u.name AS uploader_name
+      FROM public.assessment_imports ai
+      LEFT JOIN public.teachers t ON t.emp_id = ai.uploaded_by_emp_id
+      LEFT JOIN public.users u ON u.unique_id = t.user_id
+      WHERE ai.uploaded_by_emp_id = $1
+      ORDER BY ai.uploaded_at DESC
+    `, [teacher.empId]);
 
     
     const history = result.rows.map(row => {
@@ -177,10 +256,12 @@ export async function GET(req) {
         filename: row.file_name,
         date: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-        uploader: "Prof. Harsh Sharma", // Or fetch dynamically from a JOIN on teachers table
+        uploadedAt: row.uploaded_at,
+        uploader: [row.prefix, row.uploader_name].filter(Boolean).join(" "),
         class: row.target_sections,
         subject: row.course_code,
         assessment: row.assessment_type,
+        academicYear: row.academic_year,
         rows: row.total_rows,
         errors: row.error_count,
         status: row.status,

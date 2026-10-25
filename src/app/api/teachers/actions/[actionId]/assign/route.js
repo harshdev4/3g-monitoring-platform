@@ -1,6 +1,9 @@
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import getUser from "@/app/api/users/getUser";
 import pool from "@/config/db.config";
+import { getTeacherEmailFromSession, SESSION_COOKIE } from "@/lib/auth";
 
 const VALID_CATEGORIES = ["Gradual", "Growing", "Gallant"];
 
@@ -9,20 +12,17 @@ export async function POST(request, { params }) {
     let transactionStarted = false;
 
     try {
-        // Resolve the authenticated teacher on the server.
         const body = await request.json();
-        const empId = body.empId;
+        const cookieStore = await cookies();
+        const email = getTeacherEmailFromSession(
+            cookieStore.get(SESSION_COOKIE)?.value
+        );
+        const teacher = email ? await getUser(email) : null;
+        const empId = teacher?.role === "teacher" ? teacher.empId : null;
 
         if (!empId) {
             return NextResponse.json(
-                { error: "Teacher employee ID is required." },
-                { status: 400 }
-            );
-        }
-
-        if (!empId) {
-            return NextResponse.json(
-                { error: "You must be logged in as a teacher." },
+                { error: "You must be signed in as a teacher." },
                 { status: 401 }
             );
         }
@@ -140,7 +140,8 @@ export async function POST(request, { params }) {
          * Eligible students must be enrolled in the selected course and
          * semester and belong to the selected program.
          *
-         * Students without the marks/SGPA needed for categorization are excluded.
+         * Pre-MSE students with a backlog are Gradual even without an SGPA.
+         * Other students without the score needed for categorization are excluded.
          */
         let categoryQuery;
         let queryParams;
@@ -152,12 +153,13 @@ export async function POST(request, { params }) {
             ce.id AS enrollment_id,
             ce.student_id,
             ce.academic_year,
-            sar.sgpa
+            sar.sgpa,
+            COALESCE(sar.backlog, FALSE) AS backlog
           FROM public.course_enrollment ce
           JOIN public.students s
             ON s.university_roll_no = ce.student_id
           LEFT JOIN LATERAL (
-            SELECT sar.sgpa
+            SELECT sar.sgpa, sar.backlog
             FROM public.student_academic_records sar
             WHERE sar.student_id = ce.student_id
               AND sar.semester + 1 = ce.semester
@@ -185,6 +187,7 @@ export async function POST(request, { params }) {
             enrollment_id,
             student_id,
             CASE
+              WHEN backlog THEN 'Gradual'
               WHEN marks_rank IS NULL THEN NULL
               WHEN marks_rank <= 10 THEN 'Gallant'
               WHEN sgpa::numeric / 10 < 0.40 THEN 'Gradual'

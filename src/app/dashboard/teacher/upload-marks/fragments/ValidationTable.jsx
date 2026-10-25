@@ -4,6 +4,13 @@ import { useState } from "react";
 import { FileSpreadsheet, AlertCircle, Save, X, Edit3, Trash2 } from "lucide-react";
 import useTeacherStore from "@/store/useTeacherStore";
 import { Toaster,toast } from "sonner";
+
+const CATEGORY_STYLES = {
+  Gradual: "bg-amber-100 text-amber-700",
+  Growing: "bg-blue-100 text-blue-700",
+  Gallant: "bg-emerald-100 text-emerald-700",
+};
+
 export default function ValidationTable({
   file,
   setFile,
@@ -26,6 +33,7 @@ export default function ValidationTable({
     maxMarks: 100,
     marks: 120,
     attendance: 120,
+    category: 140,
     validation: 180,
     observation: 160,
     actions: 100,
@@ -160,6 +168,10 @@ const handleReupload = () => {
                   Attendance %
                   <div onMouseDown={(e) => startResize(e, "attendance")} className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-400 z-20" />
                 </th>
+                <th style={{ width: colWidths.category }} className="px-4 py-4 relative group">
+                  3G Category
+                  <div onMouseDown={(e) => startResize(e, "category")} className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-400 z-20" />
+                </th>
                 <th style={{ width: colWidths.validation }} className="px-4 py-4 relative group">
                   Validation Status
                   <div onMouseDown={(e) => startResize(e, "validation")} className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-400 z-20" />
@@ -217,6 +229,12 @@ const handleReupload = () => {
                       {isEditing ? (
                         <input type="number" className="border border-blue-400 rounded px-2 py-1 w-full text-[13px] font-normal outline-none bg-white" value={editForm.attendance} onChange={(e) => setEditForm({ ...editForm, attendance: e.target.value })} />
                       ) : `${row.attendance}%`}
+                    </td>
+
+                    <td className="px-4 py-4 truncate">
+                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-[12px] font-medium ${CATEGORY_STYLES[row.three_g_category] ?? "bg-slate-100 text-slate-600"}`}>
+                        {row.three_g_category ?? "Unclassified"}
+                      </span>
                     </td>
 
                     <td className="px-4 py-4 truncate">

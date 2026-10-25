@@ -76,21 +76,25 @@ const DashboardFilters = () => {
         semester: "",
         className: "",
         courses: "",
+        academicYear: "",
       });
     } else if (key === "semester") {
       setFilters({
         semester: value,
         className: "",
         courses: "",
+        academicYear: "",
       });
     } else if (key === "className") {
       setFilters({
         className: value,
         courses: "",
+        academicYear: "",
       });
     } else {
       if (key == "courses") {
         setFilters({ courseName: label })
+        setFilters({ academicYear: "" });
       }
       setFilters({ [key]: value });
     }
@@ -109,12 +113,28 @@ const DashboardFilters = () => {
     { value: "ese", label: "ESE" },
   ];
 
+  const academicYears = unique(
+    storedCourses
+      .filter(
+        (course) =>
+          course.program === filters.program &&
+          String(course.semester) === String(filters.semester) &&
+          course.className === filters.className &&
+          course.course_code === filters.courses
+      )
+      .map((course) => String(course.academicYear ?? ""))
+  ).sort();
 
   const fields = [
     { key: "program", label: "Program", options: programs },
     { key: "semester", label: "Semester", options: semesters },
     { key: "className", label: "Class", options: classes },
     { key: "courses", label: "Courses", options: courses },
+    {
+      key: "academicYear",
+      label: "Academic Year",
+      options: academicYears.map((value) => ({ value, label: value })),
+    },
     {
       key: "assessment",
       label: "Assessment",
@@ -161,7 +181,7 @@ const DashboardFilters = () => {
         Filters
       </p>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         {fields.map((filter) => (
           <div key={filter.key} className="min-w-0">
             <label

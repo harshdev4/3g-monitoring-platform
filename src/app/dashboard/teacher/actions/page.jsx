@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ClipboardList } from "lucide-react";
 
 import Header from "@/components/dashboard/Header";
@@ -11,13 +12,17 @@ import AssignedActions from "./AssignedActions";
 import TeacherSubmissions from "@/components/teacher/TeacherSubmissions";
 
 export default function ActionsPage() {
-  const [filters, setFilters] = useState({
-    program: "",
-    semester: "",
-    courses: "",
-    courseName: "",
-    assessment: "",
-    category3G: "",
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState(() => {
+    const program = searchParams.get("program");
+    return {
+      program: program ?? "",
+      semester: searchParams.get("semester") ?? "",
+      courses: searchParams.get("courses") ?? "",
+      courseName: searchParams.get("courseName") ?? "",
+      assessment: searchParams.get("assessment") ?? "",
+      category3G: searchParams.get("category3G") ?? "",
+    };
   });
 
   return (

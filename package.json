@@ -15,19 +15,19 @@
     "seed:students-1-sem": "node --env-file=.env src/scripts/seed-students-sem1.mjs"
   },
   "dependencies": {
+    "@office-kit/xlsx": "^0.24.2",
     "axios": "^1.20.0",
     "chart.js": "^4.5.1",
     "cloudinary": "^2.11.0",
     "dotenv": "^18.0.5",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.52.0",
-    "next": "16.3.8",
+    "next": "^16.4.3",
     "pg": "^8.23.1",
     "react": "19.2.8",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.8",
     "sonner": "^2.0.8",
-    "xlsx-js-style": "^1.2.0",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
@@ -37,7 +37,6 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
-    "tailwindcss": "^4",
-    "xlsx": "^0.18.5"
+    "tailwindcss": "^4"
   }
 }

@@ -32,7 +32,8 @@ const getUser = async (identifier) => {
             dept: user.dept_name,
             program: "MCA",
             mail: user.mail_id,
-            designation: user.designation
+            designation: user.designation,
+            phone: user.phone_number
         };
     }
 

@@ -1,12 +1,13 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
   Filter,
   RefreshCw,
+  Search,
   Users,
 } from "lucide-react";
 
@@ -209,6 +210,7 @@ export default function StudentsTable({
 
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const CATEGORY_OPTIONS =
     categoryPage === "At Risk"
@@ -232,17 +234,6 @@ export default function StudentsTable({
   );
 
   const columnCount = isPreMse ? 6 : 7;
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [
-    filters.program,
-    filters.semester,
-    filters.className,
-    filters.courses,
-    filters.assessment,
-    categoryFilter,
-  ]);
 
   // Filter the students already received from the parent.
   let filteredStudents = students;
@@ -270,6 +261,15 @@ export default function StudentsTable({
     filteredStudents = students.filter(
       (student) =>
         student.three_g_category === categoryFilter
+    );
+  }
+
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
+  if (normalizedSearch) {
+    filteredStudents = filteredStudents.filter((student) =>
+      `${student.name ?? ""} ${student.university_roll_no ?? ""}`
+        .toLocaleLowerCase()
+        .includes(normalizedSearch)
     );
   }
 
@@ -344,9 +344,10 @@ export default function StudentsTable({
             <select
               id="student-category-filter"
               value={categoryFilter}
-              onChange={(event) =>
+              onChange={(event) => {
                 setCategoryFilter(event.target.value)
-              }
+                setCurrentPage(1);
+              }}
               className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-blue-400"
             >
               {CATEGORY_OPTIONS.map((option) => (
@@ -363,6 +364,24 @@ export default function StudentsTable({
               ))}
             </select>
           </div>
+          <label className="relative block w-full sm:w-56">
+            <span className="sr-only">Search students by name or roll number</span>
+            <Search
+              size={14}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search name or roll no."
+              className="h-8 w-full rounded-md border border-slate-200 bg-white pl-8 pr-2 text-xs text-slate-700 outline-none placeholder:text-slate-400 focus:border-blue-400"
+            />
+          </label>
         </div>
       </div>
 
@@ -532,6 +551,7 @@ export default function StudentsTable({
                               className: filters.className,
                               courses: filters.courses,
                               assessment: filters.assessment,
+                              academicYear: filters.academicYear,
                             },
                           }}
                           className="text-[11px] font-medium text-[#1670FF] hover:underline"

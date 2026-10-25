@@ -12,7 +12,6 @@ import {
     ArrowRight,
 } from "lucide-react";
 
-import useTeacherStore from "@/store/useTeacherStore";
 import TeacherSubmissionForm from "@/components/teacher/TeacherSubmissionForm";
 
 function getApiError(error, fallback) {
@@ -38,8 +37,6 @@ function getApiError(error, fallback) {
 }
 
 function ActionModal({ action, filters, onClose }) {
-    const empId = useTeacherStore((state) => state.empId);
-
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
@@ -50,11 +47,6 @@ function ActionModal({ action, filters, onClose }) {
 
     const handleAssign = async (event) => {
         event.preventDefault();
-
-        if (!empId) {
-            setError("Teacher information is unavailable. Please sign in again.");
-            return;
-        }
 
         if (!filters.program || !filters.semester || !filters.courses) {
             setError("Select a program, semester, and course before assigning.");
@@ -77,7 +69,6 @@ function ActionModal({ action, filters, onClose }) {
                     program: filters.program,
                     semester: filters.semester,
                     course_code: filters.courses,
-                    empId,
                 }
             );
 

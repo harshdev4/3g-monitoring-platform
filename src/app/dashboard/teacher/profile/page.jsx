@@ -8,7 +8,7 @@ import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
-const page = () => {
+const ProfilePage = () => {
     const teacher = useTeacherStore((state) => state);
     const nameArr = teacher.name.split(" ");
     const shortName = nameArr.map(word => word.slice(0, 1)).slice(0, 2);
@@ -97,7 +97,7 @@ const page = () => {
                         </div>
                         <div>
                             <h3 className='text-[11px] mb-1 text-[#66758D] font-semibold'>Contact number</h3>
-                            <h2 className='rounded-md border border-[#E4EAF2] p-2 text-xs text-navy font-normal'>NK</h2>
+                            <h2 className='rounded-md border border-[#E4EAF2] p-2 text-xs text-navy font-normal'>{teacher.phone || "Not provided"}</h2>
                         </div>
                     </div>
                 </div>
@@ -144,4 +144,4 @@ const page = () => {
     )
 }
 
-export default page
+export default ProfilePage
