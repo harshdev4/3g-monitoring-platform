@@ -112,10 +112,10 @@ const UploadMarks = () => {
       const rawRows = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.trim());
-        if (cols.length < 6) continue;
+        if (cols.length < 5) continue;
         const cleanRoll = cols[0].replace(/[="]/g, '').trim();
         const cleanName = cols[1].replace(/"/g, '').trim();
-        rawRows.push({ roll: cleanRoll, name: cleanName, maxMarks: cols[2], marks: cols[3], attendance: cols[4], facultyObservation: cols[5] });
+        rawRows.push({ roll: cleanRoll, name: cleanName, maxMarks: cols[2], marks: cols[3], attendance: cols[4]});
       }
       runValidation(rawRows, maxMarks);
       setCurrentPhase(3); // Move to Phase 3: Validate & preview
@@ -145,45 +145,30 @@ const UploadMarks = () => {
       const response = await axios.post("/api/teachers/getStudentForMarks", { filters: activeFilters });
       const students = response.data.students;
 
-      // const csv = [
-      //   "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,Observation",
-      //   ...students.map((student) =>
-      //     [
-      //      `"ID-${student.university_roll_no}"`, 
-      //       `"${(student.name ?? "").replace(/"/g, '""')}"`,
-      //       "",
-      //       "",
-      //       "",
-      //       "",
-      //     ].join(",")
-      //   ),
-      // ].join("\n");
-      
-
-      // const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" }));
       const csv = [
-        "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,Observation",
+        "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage",
         ...students.map((student) =>
           [
-           `="${student.university_roll_no}"`, 
+            `="${student.university_roll_no}"`, 
             `"${(student.name ?? "").replace(/"/g, '""')}"`,
-            "", "", "", "",
+            "", 
+            "", 
+            "", // Only 3 empty strings here (Max_Marks, Marks_Obtained, Attendance)
           ].join(",")
         ),
       ].join("\n");
 
-      // NEW: Add this line!
       console.log("GENERATED CSV STRING:", csv);
 
       const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" }));
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${activeFilters.courseName}-studentList.csv`;
+      // Added the timestamp back so you don't accidentally open an old cached file
+      link.download = `${activeFilters.courseName}-studentList-${Date.now()}.csv`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Failed to download marks template:", error);
-
       toast.error(
         error.response?.data?.message ||
         "Failed to download marks template. Please try again."

@@ -27,7 +27,6 @@ export default function ValidationTable({
     marks: 120,
     attendance: 120,
     validation: 180,
-    observation: 160,
     actions: 100,
   });
 
@@ -164,10 +163,7 @@ const handleReupload = () => {
                   Validation Status
                   <div onMouseDown={(e) => startResize(e, "validation")} className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-400 z-20" />
                 </th>
-                <th style={{ width: colWidths.observation }} className="px-4 py-4 relative group">
-                  Faculty Observation
-                  <div onMouseDown={(e) => startResize(e, "observation")} className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-blue-400 z-20" />
-                </th>
+               
                 <th style={{ width: colWidths.actions }} className="px-4 py-4 text-center">
                   Actions
                 </th>
@@ -231,30 +227,7 @@ const handleReupload = () => {
                       )}
                     </td>
 
-                 {/* NEW: Faculty Observation Column */}
-<td className="px-4 py-4 truncate">
-  {isEditing ? (
-    <input
-      type="text"
-      className="border border-blue-400 rounded px-2 py-1.5 w-full text-[12px] font-normal outline-none bg-white transition"
-      placeholder="Observation..."
-      value={editForm.facultyObservation || ""}
-      onChange={(e) => setEditForm({ ...editForm, facultyObservation: e.target.value })}
-    />
-  ) : (
-    <input
-      type="text"
-      className="border border-slate-200 bg-transparent hover:bg-slate-50 focus:bg-white rounded px-2 py-1.5 w-full text-[12px] outline-none focus:border-blue-400 transition"
-      placeholder="Add observation..."
-      value={row.facultyObservation || ""}
-      onChange={(e) => {
-        const newData = [...parsedData];
-        newData[idx] = { ...newData[idx], facultyObservation: e.target.value };
-        setParsedData(newData);
-      }}
-    />
-  )}
-</td>
+     
 
                     <td className="px-4 py-4 text-center">
                       {isEditing ? (
