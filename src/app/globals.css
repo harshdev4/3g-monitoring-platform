@@ -26,3 +26,26 @@
 body {
   background: #f5f9ff;
 }
+
+:where(
+  button:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  summary,
+  label[for],
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"]
+) {
+  cursor: pointer;
+}
+
+:where(button:disabled, select:disabled, input:disabled) {
+  cursor: not-allowed;
+}

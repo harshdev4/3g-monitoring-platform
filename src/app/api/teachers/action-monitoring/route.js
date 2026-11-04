@@ -26,21 +26,22 @@ export async function GET() {
           SELECT
             COUNT(*)::int AS assignment_count,
             COUNT(*) FILTER (
-              WHERE LOWER(BTRIM(COALESCE(aa.status, ''))) IN (
+              WHERE LOWER(BTRIM(COALESCE(sas.status, aa.status, ''))) IN (
                 'completed', 'complete', 'approved', 'done'
               )
             )::int AS completed_count,
             COUNT(*) FILTER (
-              WHERE LOWER(BTRIM(COALESCE(aa.status, ''))) IN (
+              WHERE LOWER(BTRIM(COALESCE(sas.status, aa.status, ''))) IN (
                 'in progress',
                 'evidence submitted',
                 'submitted',
                 'pending review',
-                'under review'
+                'under review',
+                'resubmission_required'
               )
             )::int AS in_progress_count,
             COUNT(*) FILTER (
-              WHERE NULLIF(BTRIM(aa.evidence_url), '') IS NOT NULL
+              WHERE NULLIF(BTRIM(COALESCE(sas.cloudinary_url, aa.evidence_url)), '') IS NOT NULL
             )::int AS student_evidence_count,
             (
               SELECT COUNT(*)::int
@@ -48,6 +49,8 @@ export async function GET() {
               WHERE tas.emp_id = $1
             ) AS teacher_evidence_count
           FROM public.action_assignments aa
+          LEFT JOIN public.student_action_submissions sas
+            ON sas.assignment_id = aa.assignment_id
           WHERE aa.assigned_by_emp_id = $1
         `,
         [teacher.empId]
@@ -71,7 +74,7 @@ export async function GET() {
                 ' · ',
                 COALESCE(NULLIF(BTRIM(u.name), ''), s.university_roll_no),
                 ce.course_id,
-                COALESCE(NULLIF(BTRIM(aa.status), ''), 'Assigned')
+                COALESCE(NULLIF(BTRIM(sas.status), ''), NULLIF(BTRIM(aa.status), ''), 'Assigned')
               ) AS description,
               aa.created_at AS occurred_at
             FROM public.action_assignments aa
@@ -83,6 +86,9 @@ export async function GET() {
               ON s.university_roll_no = ce.student_id
             LEFT JOIN public.users u
               ON u.unique_id = s.user_id
+            LEFT JOIN public.student_action_submissions sas
+              ON sas.assignment_id = aa.assignment_id
+             AND sas.student_id = s.university_roll_no
             WHERE aa.assigned_by_emp_id = $1
 
             UNION ALL

@@ -298,11 +298,14 @@ CREATE TABLE IF NOT EXISTS public.activities (
     assessment_type VARCHAR(50),
     target_category VARCHAR(100),
     submitter_type VARCHAR(50),
-    due_date DATE,
+    due_date TIMESTAMPTZ,
     evidence_required VARCHAR(50),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE public.activities
+    ALTER COLUMN due_date TYPE TIMESTAMPTZ
+    USING due_date::timestamp AT TIME ZONE current_setting('TIMEZONE');
 
 -- ------------------------------------------------------------
 -- 15. ACTION ASSIGNMENTS
@@ -329,6 +332,13 @@ CREATE TABLE IF NOT EXISTS public.action_assignments (
     evidence_resource_type VARCHAR(50),
     evidence_format VARCHAR(50)
 );
+
+ALTER TABLE public.action_assignments
+    DROP CONSTRAINT IF EXISTS action_assignments_check;
+
+ALTER TABLE public.action_assignments
+    ADD CONSTRAINT action_assignments_check
+    CHECK (action_id IS NOT NULL OR activity_id IS NOT NULL);
 
 
 -- ------------------------------------------------------------
@@ -361,10 +371,84 @@ CREATE TABLE IF NOT EXISTS public.teacher_action_submissions (
     CONSTRAINT uq_teacher_action_submission UNIQUE (action_id, emp_id)
 );
 
+-- ------------------------------------------------------------
+-- STUDENT ACTION SUBMISSIONS
+-- Stores evidence and submission details submitted by students
+-- against their assigned activities/actions.
+-- ------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.student_action_submissions (
+    submission_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    -- Assignment reference
+    assignment_id BIGINT NOT NULL
+        REFERENCES public.action_assignments(assignment_id)
+        ON DELETE CASCADE,
+
+    -- Student who submitted
+    student_id VARCHAR(50) NOT NULL
+        REFERENCES public.students(university_roll_no)
+        ON DELETE CASCADE,
+
+    -- Submission details
+    submission_text TEXT,
+
+    -- Cloudinary file information
+    cloudinary_url TEXT,
+    cloudinary_public_id TEXT,
+    resource_type VARCHAR(50),
+    file_format VARCHAR(50),
+    original_filename TEXT,
+    file_size BIGINT,
+
+    -- Submission tracking
+    status VARCHAR(30) NOT NULL DEFAULT 'submitted'
+        CHECK (
+            status IN (
+                'draft',
+                'submitted',
+                'under_review',
+                'approved',
+                'rejected',
+                'resubmission_required'
+            )
+        ),
+
+    submitted_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- Teacher review
+    reviewed_by_emp_id VARCHAR(30)
+        REFERENCES public.teachers(emp_id)
+        ON DELETE SET NULL,
+
+    reviewed_at TIMESTAMPTZ,
+    review_feedback TEXT,
+
+    -- Prevent multiple submissions for the same assignment
+    CONSTRAINT uq_student_action_submission
+        UNIQUE (assignment_id, student_id),
+
+    -- File size validation
+    CONSTRAINT valid_submission_file_size
+        CHECK (file_size IS NULL OR file_size >= 0)
+);
 
 -- ------------------------------------------------------------
 -- 17. INDEXES FOR COMMON LOOKUPS
 -- ------------------------------------------------------------
+
+CREATE INDEX IF NOT EXISTS idx_student_submissions_student
+    ON public.student_action_submissions(student_id);
+
+CREATE INDEX IF NOT EXISTS idx_student_submissions_assignment
+    ON public.student_action_submissions(assignment_id);
+
+CREATE INDEX IF NOT EXISTS idx_student_submissions_status
+    ON public.student_action_submissions(status);
+
+CREATE INDEX IF NOT EXISTS idx_student_submissions_review
+    ON public.student_action_submissions(reviewed_by_emp_id);
 
 CREATE INDEX IF NOT EXISTS idx_students_section_semester
     ON public.students (dept_code, semester, section, academic_year);

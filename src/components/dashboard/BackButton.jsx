@@ -20,7 +20,7 @@ const BackButton = () => {
       ? "/dashboard/teacher/students"
       : "/dashboard/teacher";
 
-  if (!showBackButton) return <h1>fdsfsdfs</h1>;
+  if (!showBackButton) return;
 
   return (
     <Link

@@ -20,7 +20,7 @@ export default function LoginPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to sign in.");
-      window.location.assign("/dashboard/teacher");
+      window.location.assign(result.redirectTo || "/dashboard/teacher");
     } catch (loginError) {
       setError(loginError.message);
       setIsLoading(false);
@@ -51,7 +51,7 @@ export default function LoginPage() {
           </h1>
           
           <p className="text-slate-400 text-[14px] leading-relaxed max-w-md">
-            The central workspace for faculty to monitor academic performance, upload assessments, and identify at-risk students through data-driven distribution models.
+            A central workspace for students and faculty to track academic progress, assignments, and evidence submissions.
           </p>
 
           <div className="mt-12 space-y-6">
@@ -71,7 +71,7 @@ export default function LoginPage() {
               <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700">
                 <ShieldCheck size={18} className="text-blue-400" />
               </div>
-              Secure faculty workspace
+              Secure academic workspace
             </div>
           </div>
         </div>
@@ -92,10 +92,10 @@ export default function LoginPage() {
 
         <div className="w-full max-w-[420px] mx-auto">
           <div className="mb-8">
-            <p className="text-[12px] font-medium text-slate-500 tracking-wide uppercase mb-2">Teacher Workspace</p>
+            <p className="text-[12px] font-medium text-slate-500 tracking-wide uppercase mb-2">Academic Portal</p>
             <h2 className="text-[28px] font-bold text-slate-800 tracking-tight">Sign in to your account</h2>
             <p className="text-[13px] text-slate-500 mt-2">
-              Enter your faculty email or employee ID to access the dashboard.
+              Sign in with your registered email to open your role-specific dashboard.
             </p>
           </div>
 
@@ -103,7 +103,7 @@ export default function LoginPage() {
             {/* Email Field */}
             <div>
               <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">
-                Faculty email or employee ID
+                Registered email or employee ID
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -115,7 +115,7 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white shadow-sm"
-                  placeholder="e.g. teacher@kiet.edu or 2xxxx"
+                  placeholder="e.g. user@kiet.edu"
                 />
               </div>
             </div>

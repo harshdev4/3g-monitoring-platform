@@ -99,7 +99,7 @@ async function downloadReport({ report, actions = [], teacher, title, filters })
   const [
     { createWorkbook, addWorksheet },
     { workbookToBytes },
-    { appendRow, mergeCells, setCell, setColumnWidths, setFreezePanes, setRowHeight },
+    { mergeCells, setCell, setColumnWidths, setFreezePanes, setRowHeight },
     {
       makeAlignment,
       makeBorder,
@@ -223,28 +223,27 @@ async function downloadReport({ report, actions = [], teacher, title, filters })
     const styleId = student.persistent_gradual
       ? persistentGradualStyle
       : bodyStyle;
-    appendRow(
-      worksheet,
-      columns.map((column) => {
-        if (column.key === "serial") return index + 1;
-        if (column.key === "category_movement") return student.category_movement;
-        const stage = column.key.startsWith("pre_mse_")
-          ? "pre_mse"
-          : column.key.startsWith("mse_1_")
-            ? "mse_1"
-            : column.key.startsWith("mse_2_")
-              ? "mse_2"
-              : null;
-        if (stage && !stagesToInclude.has(stage)) return "";
-        if (column.kind === "marks") {
-          const mark = formatReportValue(student[column.key]);
-          const maximum = formatReportValue(student[column.maxKey]);
-          return mark === "" ? "" : maximum === "" ? mark : `${mark} / ${maximum}`;
-        }
-        return formatReportValue(student[column.key]);
-      }),
-      { styleIds: columns.map(() => styleId) }
-    );
+    const rowValues = columns.map((column) => {
+      if (column.key === "serial") return index + 1;
+      if (column.key === "category_movement") return student.category_movement;
+      const stage = column.key.startsWith("pre_mse_")
+        ? "pre_mse"
+        : column.key.startsWith("mse_1_")
+          ? "mse_1"
+          : column.key.startsWith("mse_2_")
+            ? "mse_2"
+            : null;
+      if (stage && !stagesToInclude.has(stage)) return "";
+      if (column.kind === "marks") {
+        const mark = formatReportValue(student[column.key]);
+        const maximum = formatReportValue(student[column.maxKey]);
+        return mark === "" ? "" : maximum === "" ? mark : `${mark} / ${maximum}`;
+      }
+      return formatReportValue(student[column.key]);
+    });
+    rowValues.forEach((value, columnIndex) => {
+      setCell(worksheet, 9 + index, columnIndex + 1, value, styleId);
+    });
     setRowHeight(worksheet, 9 + index, 32);
   });
 

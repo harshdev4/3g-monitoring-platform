@@ -36,10 +36,16 @@ function getApiError(error, fallback) {
     return error?.message || fallback;
 }
 
+function getLocalDateTimeValue(date = new Date()) {
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+    return localDate.toISOString().slice(0, 16);
+}
+
 function ActionModal({ action, filters, onClose, onAssigned }) {
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+    const [dueAt, setDueAt] = useState("");
 
     if (!action) return null;
 
@@ -50,6 +56,21 @@ function ActionModal({ action, filters, onClose, onAssigned }) {
 
         if (!filters.program || !filters.semester || !filters.courses) {
             setError("Select a program, semester, and course before assigning.");
+            return;
+        }
+
+        if (!filters.section) {
+            setError("Select a section in the filters before assigning.");
+            return;
+        }
+
+        const dueDate = new Date(dueAt);
+        if (!dueAt || Number.isNaN(dueDate.getTime())) {
+            setError("Choose a valid due date and time.");
+            return;
+        }
+        if (dueDate <= new Date()) {
+            setError("Choose a due date and time in the future.");
             return;
         }
 
@@ -69,6 +90,8 @@ function ActionModal({ action, filters, onClose, onAssigned }) {
                     program: filters.program,
                     semester: filters.semester,
                     course_code: filters.courses,
+                    section: String(filters.section || "").replace(/^MCA-/, ""),
+                    due_at: dueDate.toISOString(),
                 }
             );
 
@@ -162,12 +185,31 @@ function ActionModal({ action, filters, onClose, onAssigned }) {
                             </p>
 
                             <p className="mt-1 text-xs leading-5 text-slate-600">
-                                The server must determine eligible students using the
-                                selected program, semester, course, assessment, and
-                                category. If no eligible students exist, no assignments
-                                should be created.
+                                {filters.section
+                                    ? `Section ${filters.section} · ${filters.program} · Semester ${filters.semester}`
+                                    : "Select a section from the filters before assigning."}
+                                {" · "}
+                                Eligible students are determined by the selected
+                                assessment and category. Duplicate assignments are blocked.
                             </p>
                         </div>
+
+                        <label
+                            htmlFor="action-due-at"
+                            className="mb-5 block text-sm font-medium text-slate-700"
+                        >
+                            Due date and time
+                            <input
+                                id="action-due-at"
+                                type="datetime-local"
+                                required
+                                min={getLocalDateTimeValue()}
+                                value={dueAt}
+                                onChange={(event) => setDueAt(event.target.value)}
+                                disabled={submitting}
+                                className="mt-1.5 block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                        </label>
 
                         {error && (
                             <div
@@ -325,12 +367,23 @@ export default function ActionList({ filters, onAssigned }) {
                     </div>
                 ) : (
                     <div className="grid gap-3 md:grid-cols-2">
-                        {actions.map((action) => (
+                        {actions.map((action) => {
+                            const unavailable = (action.title || "")
+                                .trim()
+                                .toLowerCase()
+                                .includes("any other academic support");
+
+                            return (
                             <button
                                 key={action.action_id}
                                 type="button"
+                                disabled={unavailable}
                                 onClick={() => setSelectedAction(action)}
-                                className="group rounded-lg border border-slate-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                className={`group rounded-lg border p-4 text-left transition focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
+                                    unavailable
+                                        ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-60"
+                                        : "border-slate-200 hover:border-blue-300 hover:bg-blue-50/30"
+                                }`}
                             >
                                 <div className="mb-3 flex items-start justify-between gap-3">
                                     <h3 className="text-sm font-semibold leading-5 text-[#102746] group-hover:text-blue-700">
@@ -352,11 +405,13 @@ export default function ActionList({ filters, onAssigned }) {
                                     </span>
 
                                     <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600">
-                                        View action <ArrowRight size={14} />
+                                        {unavailable ? "Currently unavailable" : "View action"}
+                                        {!unavailable && <ArrowRight size={14} />}
                                     </span>
                                 </div>
                             </button>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </section>

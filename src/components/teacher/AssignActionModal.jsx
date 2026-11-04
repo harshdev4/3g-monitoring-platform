@@ -132,7 +132,7 @@ export default memo(function AssignActionModal({
     >
       {/* Backdrop: Added backdrop-blur-sm and synced duration */}
       <div
-        className={`absolute inset-0 bg-[#102746]/40 backdrop-blur-sm transition-all duration-300 ease-out motion-reduce:transition-none ${
+        className={`absolute inset-0 cursor-pointer bg-[#102746]/40 backdrop-blur-sm transition-all duration-300 ease-out motion-reduce:transition-none ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
         onClick={() => {

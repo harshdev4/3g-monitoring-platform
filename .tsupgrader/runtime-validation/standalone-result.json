@@ -1,0 +1,139 @@
+{
+  "planHash": "17144d367510bd1a71ae6d96074c62be90f409b7ebab7620a1013fdbb0a3d62a",
+  "phase": "standalone",
+  "recordedAtUtc": "2026-11-04T12:32:22.2623479Z",
+  "retryCount": 0,
+  "resetBaseline": false,
+  "complete": true,
+  "result": {
+    "setupSucceeded": true,
+    "setupDurationMs": 0,
+    "setupFailureOutput": null,
+    "assertions": [
+      {
+        "name": "tests-pass",
+        "kind": "process",
+        "verificationMethod": "test-results",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E 3gs-automation@0.1.0 test\r\n\u003E node --test\r\n\r\n(node:2372) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/91886/Desktop/3gs-automation/src/lib/auth.js is not specified and it doesn\u0027t parse as CommonJS.\r\nReparsing as ES module because module syntax was detected. This incurs a performance overhead.\r\nTo eliminate this warning, add \u0022type\u0022: \u0022module\u0022 to C:\\Users\\91886\\Desktop\\3gs-automation\\package.json.\r\n(Use \u0060node --trace-warnings ...\u0060 to show where the warning was created)\r\n\u2714 student session records the registered email and role (7.2474ms)\r\n\u2714 teacher session helper rejects student sessions (2.2938ms)\r\n\u2714 invalid session tokens are rejected (0.2784ms)\r\n\u2139 tests 3\r\n\u2139 suites 0\r\n\u2139 pass 3\r\n\u2139 fail 0\r\n\u2139 cancelled 0\r\n\u2139 skipped 0\r\n\u2139 todo 0\r\n\u2139 duration_ms 467.8205\r\n",
+        "durationMs": 1704,
+        "testResults": {
+          "testFramework": "unknown",
+          "runnerDetectedFrom": "none",
+          "testsTotal": 0,
+          "testsPassed": 0,
+          "testsFailed": 0,
+          "testsSkipped": 0,
+          "parseFailed": true
+        }
+      },
+      {
+        "name": "student-files-lint",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E 3gs-automation@0.1.0 lint\r\n\u003E eslint src/app/api/auth/login/route.js src/app/api/students/actions/route.js src/app/api/students/actions/[assignmentId]/submit/route.js src/app/dashboard/student/actions/page.jsx src/app/dashboard/student/layout.jsx src/app/dashboard/student/page.jsx src/app/dashboard/student/profile/page.jsx src/app/dashboard/student/submissions/page.jsx src/app/login/page.jsx src/app/page.js src/components/student/StudentAssignments.jsx src/components/student/StudentSidebar.jsx src/lib/auth.js src/lib/student.js\r\n\r\n",
+        "durationMs": 13452
+      },
+      {
+        "name": "production-build",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": false,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 1,
+        "outputSample": "\r\n\u003E 3gs-automation@0.1.0 build\r\n\u003E next build\r\n\r\n\u25B2 Next.js 16.4.3 (Turbopack)\r\n- Environments: .env\r\n\u2713 Running next.config.mjs took 49ms\r\n\r\n  Creating an optimized production build ...\r\n\u2713 Compiled successfully in 6.4s\r\n  Running TypeScript ...\r\n  Finished TypeScript in 14ms ...\r\n  Collecting page data using 7 workers ...\r\n  Generating static pages using 7 workers (0/41) ...\r\nError occurred prerendering page \u0022/dashboard/dean\u0022. Read more: https://nextjs.org/docs/messages/prerender-error\r\nError: The default export is not a React Component in \u0022/dashboard/dean/page\u0022\r\n    at ignore-listed frames\r\nExport encountered an error on /dashboard/dean/page: /dashboard/dean, exiting the build.\r\n\u2A2F Next.js build worker exited with code: 1 and signal: null\r\n",
+        "durationMs": 15857
+      },
+      {
+        "name": "login-route-serves",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": false,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 1,
+        "outputSample": "server exited before responding (exit=1)\n--- server output ---\n\r\n\u003E 3gs-automation@0.1.0 dev\r\n\u003E next dev --port 3100\r\n\r\n\u25B2 Next.js 16.4.3 (Turbopack)\r\n- Local:         http://localhost:3100\r\n- Network:       http://192.168.137.1:3100\r\n- Environments: .env\r\n\u2713 Ready in 1982ms\r\n\u2713 Running next.config.mjs took 101ms\r\n\u2A2F Another next dev server is already running.\r\n\r\n- Local:        http://localhost:3000\r\n- PID:          2744\r\n- Dir:          C:\\Users\\91886\\Desktop\\3gs-automation\r\n- Log:          .next\\dev\\logs\\next-development.log\r\n\r\nYou can access the existing server at http://localhost:3000,\r\nor run taskkill /PID 2744 /F to stop it and start a new one.\r\n\u001B[?25h\r\n",
+        "durationMs": 5916
+      }
+    ],
+    "executions": [
+      {
+        "source": "tests-pass",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "test"
+        ],
+        "cwd": "C:\\Users\\91886\\Desktop\\3gs-automation",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "student-files-lint",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "lint",
+          "--",
+          "src/app/api/auth/login/route.js",
+          "src/app/api/students/actions/route.js",
+          "src/app/api/students/actions/[assignmentId]/submit/route.js",
+          "src/app/dashboard/student/actions/page.jsx",
+          "src/app/dashboard/student/layout.jsx",
+          "src/app/dashboard/student/page.jsx",
+          "src/app/dashboard/student/profile/page.jsx",
+          "src/app/dashboard/student/submissions/page.jsx",
+          "src/app/login/page.jsx",
+          "src/app/page.js",
+          "src/components/student/StudentAssignments.jsx",
+          "src/components/student/StudentSidebar.jsx",
+          "src/lib/auth.js",
+          "src/lib/student.js"
+        ],
+        "cwd": "C:\\Users\\91886\\Desktop\\3gs-automation",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "production-build",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "C:\\Users\\91886\\Desktop\\3gs-automation",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "login-route-serves",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "dev",
+          "--",
+          "--port",
+          "3100"
+        ],
+        "cwd": "C:\\Users\\91886\\Desktop\\3gs-automation",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      }
+    ]
+  }
+}

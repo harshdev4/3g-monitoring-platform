@@ -1,23 +1,32 @@
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import getUser from "@/app/api/users/getUser";
 import pool from "@/config/db.config";
+import { getTeacherEmailFromSession, SESSION_COOKIE } from "@/lib/auth";
 
 export async function GET(request, context) {
   try {
     const { actionId } = await context.params;
     const { searchParams } = new URL(request.url);
 
-    const empId = searchParams.get("empId")?.trim();
+    const cookieStore = await cookies();
+    const email = getTeacherEmailFromSession(
+      cookieStore.get(SESSION_COOKIE)?.value
+    );
+    const teacher = email ? await getUser(email) : null;
+    const empId = teacher?.role === "teacher" ? teacher.empId : null;
     const program = searchParams.get("program")?.trim() || null;
     const semesterValue = searchParams.get("semester")?.trim() || null;
     const courseCode = searchParams.get("course_code")?.trim() || null;
+    const section = searchParams.get("section")?.trim() || null;
     const assessment = searchParams.get("assessment")?.trim() || null;
     const category = searchParams.get("category")?.trim() || null;
 
     if (!actionId || !empId) {
       return NextResponse.json(
-        { message: "Action ID and teacher employee ID are required." },
-        { status: 400 }
+        { message: "Teacher sign-in is required." },
+        { status: 401 }
       );
     }
 
@@ -72,9 +81,14 @@ export async function GET(request, context) {
         aa.assignment_id,
         aa.enrollment_id,
         aa.created_at AS assigned_on,
-        aa.status,
-        aa.evidence_url,
-        aa.review_feedback,
+        COALESCE(sas.status, aa.status, 'Assigned') AS status,
+        COALESCE(sas.cloudinary_url, aa.evidence_url) AS evidence_url,
+        sas.original_filename,
+        sas.submission_text,
+        sas.submitted_at,
+        sas.reviewed_at,
+        COALESCE(sas.review_feedback, aa.review_feedback) AS review_feedback,
+        sas.submission_id,
 
         s.university_roll_no AS student_id,
         u.name AS student_name,
@@ -100,6 +114,9 @@ export async function GET(request, context) {
 
       LEFT JOIN public.courses c
         ON c.course_code = ce.course_id
+      LEFT JOIN public.student_action_submissions sas
+        ON sas.assignment_id = aa.assignment_id
+       AND sas.student_id = s.university_roll_no
 
       WHERE aa.action_id = $1
         AND aa.assigned_by_emp_id = $2
@@ -108,6 +125,7 @@ export async function GET(request, context) {
         AND ($5::text IS NULL OR ce.course_id = $5)
         AND ($6::text IS NULL OR at.assessment_type = $6)
         AND ($7::text IS NULL OR at.target_category = $7)
+        AND ($8::text IS NULL OR s.section = $8)
         AND s.semester = ce.semester
 
       ORDER BY u.name ASC NULLS LAST, s.university_roll_no ASC;
@@ -121,6 +139,7 @@ export async function GET(request, context) {
       courseCode,
       assessment,
       category,
+      section,
     ]);
 
     return NextResponse.json({

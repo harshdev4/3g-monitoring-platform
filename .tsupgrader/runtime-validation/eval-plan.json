@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-11-04T06:45:00Z",
+  "generatedOnPlatform": "win32",
+  "projectType": "webapp",
+  "setup": [],
+  "assertions": [
+    {
+      "name": "tests-pass",
+      "kind": "process",
+      "command": "npm",
+      "args": ["test"],
+      "verificationMethod": "test-results",
+      "expected": "0",
+      "timeoutSeconds": 180
+    },
+    {
+      "name": "student-files-lint",
+      "kind": "process",
+      "command": "npm",
+      "args": [
+        "run",
+        "lint",
+        "--",
+        "src/app/api/auth/login/route.js",
+        "src/app/api/students/actions/route.js",
+        "src/app/api/students/actions/[assignmentId]/submit/route.js",
+        "src/app/dashboard/student/actions/page.jsx",
+        "src/app/dashboard/student/layout.jsx",
+        "src/app/dashboard/student/page.jsx",
+        "src/app/dashboard/student/profile/page.jsx",
+        "src/app/dashboard/student/submissions/page.jsx",
+        "src/app/login/page.jsx",
+        "src/app/page.js",
+        "src/components/student/StudentAssignments.jsx",
+        "src/components/student/StudentSidebar.jsx",
+        "src/lib/auth.js",
+        "src/lib/student.js"
+      ],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 180
+    },
+    {
+      "name": "production-build",
+      "kind": "process",
+      "command": "npm",
+      "args": ["run", "build"],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 600
+    },
+    {
+      "name": "login-route-serves",
+      "kind": "http-probe",
+      "startCommand": "npm",
+      "startArgs": ["run", "dev", "--", "--port", "3100"],
+      "url": "http://localhost:3100/login",
+      "verificationMethod": "http-status",
+      "expected": "200",
+      "timeoutSeconds": 120
+    }
+  ]
+}

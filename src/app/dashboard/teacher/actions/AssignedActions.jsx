@@ -63,6 +63,7 @@ export default function AssignedActions({ filters, assignmentVersion = 0 }) {
             program: filters.program || "",
             semester: filters.semester || "",
             course_code: filters.courses || "",
+            section: String(filters.section || "").replace(/^MCA-/, ""),
             assessment: filters.assessment || "",
             category: filters.category3G || "",
           },
@@ -81,6 +82,7 @@ export default function AssignedActions({ filters, assignmentVersion = 0 }) {
     filters.program,
     filters.semester,
     filters.courses,
+    filters.section,
     filters.assessment,
     filters.category3G,
   ]);
@@ -106,7 +108,11 @@ export default function AssignedActions({ filters, assignmentVersion = 0 }) {
     }
 
     if (filters.courses) {
-      query.set("course_code", filters.courses);
+      query.set("courses", filters.courses);
+    }
+
+    if (filters.section) {
+      query.set("section", filters.section);
     }
 
     if (filters.assessment) {
@@ -114,7 +120,7 @@ export default function AssignedActions({ filters, assignmentVersion = 0 }) {
     }
 
     if (filters.category3G) {
-      query.set("category", filters.category3G);
+      query.set("category3G", filters.category3G);
     }
 
     const queryString = query.toString();

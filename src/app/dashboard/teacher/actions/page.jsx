@@ -20,6 +20,7 @@ export default function ActionsPage() {
       program: program ?? "",
       semester: searchParams.get("semester") ?? "",
       courses: searchParams.get("courses") ?? "",
+      section: searchParams.get("section") ?? "",
       courseName: searchParams.get("courseName") ?? "",
       assessment: searchParams.get("assessment") ?? "",
       category3G: searchParams.get("category3G") ?? "",
