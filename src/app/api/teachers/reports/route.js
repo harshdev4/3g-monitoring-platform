@@ -5,7 +5,7 @@ import getUser from "@/app/api/users/getUser";
 import pool from "@/config/db.config";
 import { getTeacherEmailFromSession, SESSION_COOKIE } from "@/lib/auth";
 
-const ASSESSMENTS = new Set(["pre-mse", "mse-1", "mse-2", "ese"]);
+const ASSESSMENTS = new Set(["pre-mse", "mse-1", "mse-2"]);
 const CATEGORIES = new Set(["Gradual", "Growing", "Gallant"]);
 
 export async function GET(request) {
@@ -94,6 +94,17 @@ export async function GET(request) {
             assessment_data.attendance_pct,
             assessment_data.faculty_observation,
             assessment_data.assessment_uploaded_at,
+            assessment_stage_data.pre_mse_assessment_mark,
+            assessment_stage_data.pre_mse_assessment_max_mark,
+            assessment_stage_data.pre_mse_observation,
+            assessment_stage_data.mse_1_attendance_pct,
+            assessment_stage_data.mse_1_mark,
+            assessment_stage_data.mse_1_max_mark,
+            assessment_stage_data.mse_1_observation,
+            assessment_stage_data.mse_2_attendance_pct,
+            assessment_stage_data.mse_2_mark,
+            assessment_stage_data.mse_2_max_mark,
+            assessment_stage_data.mse_2_observation,
             academic_data.sgpa,
             academic_data.backlog AS backlog
           FROM public.course_enrollment ce
@@ -123,6 +134,35 @@ export async function GET(request) {
             LIMIT 1
           ) assessment_data ON TRUE
           LEFT JOIN LATERAL (
+            SELECT
+              MAX(obtained_mark) FILTER (WHERE type = 'pre-mse') AS pre_mse_assessment_mark,
+              MAX(max_mark) FILTER (WHERE type = 'pre-mse') AS pre_mse_assessment_max_mark,
+              MAX(faculty_observation) FILTER (WHERE type = 'pre-mse') AS pre_mse_observation,
+              MAX(attendance_pct) FILTER (WHERE type = 'mse-1') AS mse_1_attendance_pct,
+              MAX(obtained_mark) FILTER (WHERE type = 'mse-1') AS mse_1_mark,
+              MAX(max_mark) FILTER (WHERE type = 'mse-1') AS mse_1_max_mark,
+              MAX(faculty_observation) FILTER (WHERE type = 'mse-1') AS mse_1_observation,
+              MAX(attendance_pct) FILTER (WHERE type = 'mse-2') AS mse_2_attendance_pct,
+              MAX(obtained_mark) FILTER (WHERE type = 'mse-2') AS mse_2_mark,
+              MAX(max_mark) FILTER (WHERE type = 'mse-2') AS mse_2_max_mark,
+              MAX(faculty_observation) FILTER (WHERE type = 'mse-2') AS mse_2_observation
+            FROM (
+              SELECT DISTINCT ON (a.type)
+                a.type,
+                a.obtained_mark,
+                a.max_mark,
+                a.attendance_pct,
+                a.faculty_observation
+              FROM public.assessments a
+              WHERE a.student_id = ce.student_id
+                AND a.course_id = ce.course_id
+                AND a.semester = ce.semester
+                AND a.academic_year = ce.academic_year
+                AND a.type IN ('pre-mse', 'mse-1', 'mse-2')
+              ORDER BY a.type, a.id DESC
+            ) latest_assessments
+          ) assessment_stage_data ON TRUE
+          LEFT JOIN LATERAL (
             SELECT sar.sgpa, sar.backlog
             FROM public.student_academic_records sar
             WHERE sar.student_id = ce.student_id
@@ -139,37 +179,90 @@ export async function GET(request) {
         ranked_students AS (
           SELECT
             *,
-            CASE
-              WHEN $6 = 'pre-mse' AND sgpa IS NOT NULL THEN
-                DENSE_RANK() OVER (
-                  ORDER BY CASE WHEN $6 = 'pre-mse' THEN sgpa END DESC NULLS LAST
-                )
-              WHEN $6 <> 'pre-mse' AND obtained_mark IS NOT NULL THEN
-                DENSE_RANK() OVER (
-                  ORDER BY CASE WHEN $6 <> 'pre-mse' THEN obtained_mark END DESC NULLS LAST
-                )
-              ELSE NULL
-            END AS student_rank
+            COALESCE(pre_mse_assessment_mark, sgpa) AS pre_mse_mark,
+            COALESCE(pre_mse_assessment_max_mark, 10) AS pre_mse_max_mark,
+            CASE WHEN sgpa IS NULL THEN NULL
+              ELSE DENSE_RANK() OVER (ORDER BY sgpa DESC NULLS LAST)
+            END AS pre_mse_rank,
+            CASE WHEN mse_1_mark IS NULL THEN NULL
+              ELSE DENSE_RANK() OVER (ORDER BY mse_1_mark DESC NULLS LAST)
+            END AS mse_1_rank,
+            CASE WHEN mse_2_mark IS NULL THEN NULL
+              ELSE DENSE_RANK() OVER (ORDER BY mse_2_mark DESC NULLS LAST)
+            END AS mse_2_rank
           FROM eligible_students
         ),
         categorized_students AS (
           SELECT
             *,
             CASE
-              WHEN $6 = 'pre-mse' AND backlog THEN 'Gradual'
-              WHEN student_rank IS NULL THEN NULL
-              WHEN student_rank <= 10 THEN 'Gallant'
-              WHEN $6 = 'pre-mse' AND sgpa::numeric / 10 < 0.40 THEN 'Gradual'
-              WHEN $6 <> 'pre-mse'
-                AND obtained_mark::numeric / NULLIF(max_mark, 0) < 0.40
-                THEN 'Gradual'
-              ELSE 'Growing'
+              WHEN $6 = 'pre-mse' THEN
+                CASE
+                  WHEN backlog THEN 'Gradual'
+                  WHEN sgpa IS NULL THEN NULL
+                  WHEN pre_mse_rank <= 10 THEN 'Gallant'
+                  WHEN sgpa::numeric / 10 < 0.40 THEN 'Gradual'
+                  ELSE 'Growing'
+                END
+              WHEN $6 = 'mse-1' THEN
+                CASE
+                  WHEN mse_1_mark IS NULL THEN NULL
+                  WHEN mse_1_rank <= 10 THEN 'Gallant'
+                  WHEN mse_1_mark::numeric / NULLIF(mse_1_max_mark, 0) < 0.40 THEN 'Gradual'
+                  ELSE 'Growing'
+                END
+              ELSE
+                CASE
+                  WHEN mse_2_mark IS NULL THEN NULL
+                  WHEN mse_2_rank <= 10 THEN 'Gallant'
+                  WHEN mse_2_mark::numeric / NULLIF(mse_2_max_mark, 0) < 0.40 THEN 'Gradual'
+                  ELSE 'Growing'
+                END
             END AS three_g_category,
             CASE
-              WHEN $6 = 'pre-mse' THEN sgpa::numeric / 10 * 100
-              ELSE obtained_mark::numeric / NULLIF(max_mark, 0) * 100
-            END AS obtained_percentage
+              WHEN $6 = 'pre-mse' THEN NULL
+              WHEN $6 = 'mse-1' THEN
+                CASE
+                  WHEN backlog THEN 'Gradual'
+                  WHEN sgpa IS NULL THEN NULL
+                  WHEN pre_mse_rank <= 10 THEN 'Gallant'
+                  WHEN sgpa::numeric / 10 < 0.40 THEN 'Gradual'
+                  ELSE 'Growing'
+                END
+              ELSE
+                CASE
+                  WHEN mse_1_mark IS NULL THEN NULL
+                  WHEN mse_1_rank <= 10 THEN 'Gallant'
+                  WHEN mse_1_mark::numeric / NULLIF(mse_1_max_mark, 0) < 0.40 THEN 'Gradual'
+                  ELSE 'Growing'
+                END
+            END AS previous_three_g_category,
+            CASE
+              WHEN $6 = 'pre-mse' THEN pre_mse_mark
+              WHEN $6 = 'mse-1' THEN mse_1_mark
+              ELSE mse_2_mark
+            END AS selected_mark,
+            CASE
+              WHEN $6 = 'pre-mse' THEN pre_mse_max_mark
+              WHEN $6 = 'mse-1' THEN mse_1_max_mark
+              ELSE mse_2_max_mark
+            END AS selected_max_mark
           FROM ranked_students
+        ),
+        movement_students AS (
+          SELECT
+            *,
+            CASE
+              WHEN $6 = 'pre-mse' AND three_g_category IS NOT NULL
+                THEN 'Baseline: ' || three_g_category
+              WHEN three_g_category IS NULL THEN 'Not assessed'
+              WHEN previous_three_g_category IS NULL
+                THEN 'New in ' || three_g_category
+              WHEN previous_three_g_category = three_g_category
+                THEN 'Continued in ' || three_g_category
+              ELSE previous_three_g_category || ' to ' || three_g_category
+            END AS category_movement
+          FROM categorized_students
         )
         SELECT
           student_name,
@@ -181,53 +274,47 @@ export async function GET(request) {
           course_id AS course_code,
           course_name,
           $6::text AS assessment_type,
-          obtained_mark,
-          max_mark,
-          ROUND(obtained_percentage, 2) AS obtained_percentage,
-          attendance_pct,
+          selected_mark AS obtained_mark,
+          selected_max_mark AS max_mark,
           sgpa,
-          student_rank,
+          CASE
+            WHEN $6 = 'pre-mse' THEN pre_mse_rank
+            WHEN $6 = 'mse-1' THEN mse_1_rank
+            ELSE mse_2_rank
+          END AS student_rank,
           three_g_category,
+          category_movement,
+          (three_g_category = 'Gradual' AND previous_three_g_category = 'Gradual')
+            AS persistent_gradual,
           backlog,
-          faculty_observation,
-          assessment_uploaded_at,
+          pre_mse_mark,
+          pre_mse_max_mark,
+          pre_mse_observation,
+          mse_1_attendance_pct,
+          mse_1_mark,
+          mse_1_max_mark,
+          mse_1_observation,
+          mse_2_attendance_pct,
+          mse_2_mark,
+          mse_2_max_mark,
+          mse_2_observation,
           action_data.actions_taken
-        FROM categorized_students categorized
+        FROM movement_students categorized
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(
-            action_entry,
+            action_title,
             E'\n' ORDER BY action_title, action_id
           ) AS actions_taken
           FROM (
             SELECT DISTINCT
               at.action_id,
-              at.title AS action_title,
-              at.title AS action_entry
+              at.title AS action_title
             FROM public.action_assignments aa
             JOIN public.action_templates at
               ON at.action_id = aa.action_id
             WHERE aa.enrollment_id = categorized.enrollment_id
               AND aa.assigned_by_emp_id = $8
-              AND at.submitter_type IS DISTINCT FROM 'teacher'
               AND at.assessment_type = $6
-              AND at.target_category = categorized.three_g_category
-
-            UNION
-
-            SELECT DISTINCT
-              at.action_id,
-              at.title AS action_title,
-              at.title || ' — Evidence: ' || tas.cloudinary_url AS action_entry
-            FROM public.teacher_action_submissions tas
-            JOIN public.action_templates at
-              ON at.action_id = tas.action_id
-            WHERE tas.emp_id = $8
-              AND tas.program_name = categorized.program_name
-              AND tas.semester = categorized.semester
-              AND tas.course_code = categorized.course_id
-              AND tas.assessment_type = $6
-              AND tas.target_category = categorized.three_g_category
-              AND at.submitter_type = 'teacher'
           ) student_actions
         ) action_data ON TRUE
         WHERE $7 = 'master' OR categorized.three_g_category = $7
@@ -256,6 +343,7 @@ export async function GET(request) {
       teacher: {
         name: teacher.name,
         empId: teacher.empId,
+        department: teacher.dept,
       },
       filters: {
         program,
@@ -267,6 +355,14 @@ export async function GET(request) {
         reportType,
       },
       rows,
+      actions: [...new Map(
+        rows.flatMap((row) =>
+          String(row.actions_taken || "")
+            .split("\n")
+            .filter(Boolean)
+            .map((entry) => [entry, entry])
+        )
+      ).values()],
     });
   } catch (error) {
     console.error("Teacher report generation failed:", error);

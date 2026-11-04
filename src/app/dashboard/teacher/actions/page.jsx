@@ -13,6 +13,7 @@ import TeacherSubmissions from "@/components/teacher/TeacherSubmissions";
 
 export default function ActionsPage() {
   const searchParams = useSearchParams();
+  const [assignmentVersion, setAssignmentVersion] = useState(0);
   const [filters, setFilters] = useState(() => {
     const program = searchParams.get("program");
     return {
@@ -62,11 +63,18 @@ export default function ActionsPage() {
               </div>
             </div>
 
-            <ActionList filters={filters} />
+            <ActionList
+              key={`${filters.assessment}:${filters.category3G}`}
+              filters={filters}
+              onAssigned={() => setAssignmentVersion((version) => version + 1)}
+            />
           </section>
 
           <section>
-            <AssignedActions filters={filters} />
+            <AssignedActions
+              filters={filters}
+              assignmentVersion={assignmentVersion}
+            />
           </section>
           <section>
             <TeacherSubmissions filters={filters} />

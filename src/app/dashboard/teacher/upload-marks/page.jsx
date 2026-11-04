@@ -14,6 +14,7 @@ import axios from "axios";
 import { Toaster, toast } from 'sonner';
 
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const UploadMarks = () => {
   // Core States
@@ -33,7 +34,6 @@ const UploadMarks = () => {
   const [submissionWarning, setSubmissionWarning] = useState("");
 
   const activeFilters = useTeacherStore((state) => state.filters);
-  const [fileBase64, setFileBase64] = useState(null);
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -214,14 +214,6 @@ const UploadMarks = () => {
         throw new Error("The Excel file does not contain any student records.");
       }
 
-      const base64Data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("Unable to read the Excel file for upload."));
-        reader.readAsDataURL(file);
-      });
-      setFileBase64(base64Data);
-
       runValidation(rawRows, maxMarks);
       setCurrentPhase(3); // Move to Phase 3: Validate & preview
     } catch (error) {
@@ -236,8 +228,11 @@ const UploadMarks = () => {
       toast.error("Please upload an .xlsx file.");
       return false;
     }
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      toast.error("The maximum workbook size is 10 MB.");
+      return false;
+    }
     setFile(selectedFile);
-    setFileBase64(null);
     setCurrentPhase(2); // Selecting a file moves active step to 2 (Upload File)
     return true;
   };
@@ -509,34 +504,36 @@ const downloadTemplate = async () => {
         return;
       }
 
-      const payload = {
-        marksData: parsedData,
-        filters: {
+      const formData = new FormData();
+      formData.append("marksData", JSON.stringify(parsedData));
+      formData.append(
+        "filters",
+        JSON.stringify({
           className: activeFilters.className,
           courseCode: activeFilters.courses,
           semester: activeFilters.semester,
           assessment: activeFilters.assessment,
           academicYear: activeFilters.academicYear,
-        },
-        fileMeta: {
-          fileName: file ? file.name : "marks_upload.xlsx",
-          errorCount: errorCount,
-          totalRows: parsedData.length,
-          base64Data: fileBase64
-        }
-      };
+        })
+      );
+      formData.append("errorCount", String(errorCount));
+      if (file) {
+        formData.append("file", file);
+      }
 
       const response = await fetch("/api/marks/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: formData,
       });
-      const result = await response.json();
+      const result = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to submit marks.");
+        throw new Error(
+          result?.error || `Failed to submit marks (HTTP ${response.status}).`
+        );
+      }
+      if (!result) {
+        throw new Error("The server returned an invalid response while submitting marks.");
       }
       setHistoryData((current) => [result.newRecord, ...current]);
       setHistoryError("");

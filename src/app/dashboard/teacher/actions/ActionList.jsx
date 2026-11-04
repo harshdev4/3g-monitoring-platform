@@ -36,7 +36,7 @@ function getApiError(error, fallback) {
     return error?.message || fallback;
 }
 
-function ActionModal({ action, filters, onClose }) {
+function ActionModal({ action, filters, onClose, onAssigned }) {
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
@@ -79,9 +79,8 @@ function ActionModal({ action, filters, onClose }) {
                 return;
             }
 
-            setMessage(
-                response.data?.message || "Action assigned successfully."
-            );
+            setMessage(response.data?.message || "Action assigned successfully.");
+            onAssigned?.();
         } catch (err) {
             setError(getApiError(err, "The action could not be assigned."));
         } finally {
@@ -210,7 +209,7 @@ function ActionModal({ action, filters, onClose }) {
     );
 }
 
-export default function ActionList({ filters }) {
+export default function ActionList({ filters, onAssigned }) {
     const [actions, setActions] = useState([]);
     const [selectedAction, setSelectedAction] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -221,10 +220,6 @@ export default function ActionList({ filters }) {
 
     useEffect(() => {
         if (!assessment || !category) {
-            setActions([]);
-            setSelectedAction(null);
-            setError("");
-            setLoading(false);
             return;
         }
 
@@ -372,6 +367,7 @@ export default function ActionList({ filters }) {
                     action={selectedAction}
                     filters={filters}
                     onClose={() => setSelectedAction(null)}
+                    onAssigned={onAssigned}
                 />
             )}
         </>

@@ -17,10 +17,20 @@ const PerformanceMatricSection = ({ students, loading, error, retry }) => {
     if (isPreMse) {
       return student.sgpa != null && Number.isFinite(Number(student.sgpa));
     }
-    return Number.isFinite(Number(student.obtained_mark)) &&
+    return student.obtained_mark != null &&
+      student.obtained_mark !== "" &&
+      student.max_mark != null &&
+      Number.isFinite(Number(student.obtained_mark)) &&
       Number.isFinite(Number(student.max_mark)) &&
       Number(student.max_mark) > 0;
   });
+  const scores = validMarks.map((student) =>
+    isPreMse ? Number(student.sgpa) : Number(student.obtained_mark)
+  );
+  const minimumMarks = scores.length > 0 ? Math.min(...scores) : null;
+  const maximumMarks = scores.length > 0 ? Math.max(...scores) : null;
+  const formatScore = (score) =>
+    score == null ? "N/A" : Number(score.toFixed(2)).toString();
 
   const averageMarks = validMarks.length > 0
     ? validMarks.reduce((sum, student) => sum + (
@@ -61,6 +71,24 @@ const PerformanceMatricSection = ({ students, loading, error, retry }) => {
       : 0;
 
   const metrics = [
+    {
+      label: "Minimum marks obtained",
+      value: formatScore(minimumMarks),
+      description: isPreMse
+        ? `Previous SGPA out of 10 · ${validMarks.length} student records`
+        : `Assessment marks · ${validMarks.length} student records`,
+      type: "",
+      iconClassName: "text-[#2563EB]",
+    },
+    {
+      label: "Maximum marks obtained",
+      value: formatScore(maximumMarks),
+      description: isPreMse
+        ? `Previous SGPA out of 10 · ${validMarks.length} student records`
+        : `Assessment marks · ${validMarks.length} student records`,
+      type: "",
+      iconClassName: "text-[#2563EB]",
+    },
     {
       label: isPreMse ? "Average previous SGPA" : "Average marks",
       value: isPreMse
@@ -123,7 +151,7 @@ const PerformanceMatricSection = ({ students, loading, error, retry }) => {
     );
   }
 
-  return <MetricCards metrics={metrics} />;
+  return <MetricCards metrics={metrics} columns={5} />;
 };
 
 export default PerformanceMatricSection;

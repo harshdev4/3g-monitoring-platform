@@ -34,7 +34,7 @@ const formatDate = (date) => {
   });
 };
 
-export default function AssignedActions({ filters }) {
+export default function AssignedActions({ filters, assignmentVersion = 0 }) {
   const router = useRouter();
   const empId = useTeacherStore((state) => state.empId);
 
@@ -86,8 +86,12 @@ export default function AssignedActions({ filters }) {
   ]);
 
   useEffect(() => {
-    loadActions();
-  }, [loadActions]);
+    const timeoutId = window.setTimeout(() => {
+      void loadActions();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadActions, assignmentVersion]);
 
   // Navigate to the selected action while preserving filters.
   const openAction = (actionId) => {

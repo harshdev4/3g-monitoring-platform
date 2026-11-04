@@ -5,6 +5,10 @@ import pool from "@/config/db.config";
 import cloudinary from "@/config/cloudinary.config";
 import { getTeacherEmailFromSession, SESSION_COOKIE } from "@/lib/auth";
 
+export const runtime = "nodejs";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 async function getAuthenticatedTeacher() {
   const cookieStore = await cookies();
   const email = getTeacherEmailFromSession(
@@ -20,9 +24,33 @@ export async function POST(req) {
   let fileArchiveWarning = null;
 
   try {
-    const body = await req.json();
-  
-    const { marksData, filters, fileMeta } = body;
+    const formData = await req.formData();
+    const marksDataValue = formData.get("marksData");
+    const filtersValue = formData.get("filters");
+    const file = formData.get("file");
+
+    if (
+      typeof marksDataValue !== "string" ||
+      typeof filtersValue !== "string"
+    ) {
+      return NextResponse.json(
+        { error: "Upload data is missing or invalid." },
+        { status: 400 }
+      );
+    }
+
+    let marksData;
+    let filters;
+    try {
+      marksData = JSON.parse(marksDataValue);
+      filters = JSON.parse(filtersValue);
+    } catch {
+      return NextResponse.json(
+        { error: "Upload data is not valid JSON." },
+        { status: 400 }
+      );
+    }
+
     const teacher = await getAuthenticatedTeacher();
     if (!teacher) {
       return NextResponse.json(
@@ -44,6 +72,36 @@ export async function POST(req) {
         { status: 400 }
       );
     }
+
+    if (!file || typeof file.arrayBuffer !== "function" || !file.name) {
+      return NextResponse.json(
+        { error: "Please select an Excel workbook to upload." },
+        { status: 400 }
+      );
+    }
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      return NextResponse.json(
+        { error: "Only .xlsx workbooks can be uploaded." },
+        { status: 400 }
+      );
+    }
+    if (file.size === 0) {
+      return NextResponse.json(
+        { error: "The selected workbook is empty." },
+        { status: 400 }
+      );
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "The maximum workbook size is 10 MB." },
+        { status: 413 }
+      );
+    }
+
+    const fileMeta = {
+      fileName: file.name,
+      errorCount: Number(formData.get("errorCount")) || 0,
+    };
 
     const type = filters.assessment;
     const semester = Number(filters.semester);
@@ -71,30 +129,39 @@ export async function POST(req) {
     }
 
     let fileUrl = null;
-    if (fileMeta?.base64Data) {
-      try {
-        const fileName = String(fileMeta.fileName || "marks_upload.xlsx");
-        const extension = fileName.includes(".")
-          ? fileName.split(".").pop().toLowerCase()
-          : "xlsx";
-        const baseName = fileName.substring(0, fileName.lastIndexOf(".")) || fileName;
-        const uploadResponse = await cloudinary.uploader.upload(
-          fileMeta.base64Data,
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const fileName = file.name;
+      const baseName = fileName.substring(0, fileName.lastIndexOf(".")) || fileName;
+      const uploadResponse = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
           {
             resource_type: "raw",
             folder: "3gs_imports",
-            public_id: `${baseName}_${Date.now()}.${extension}`,
+            public_id: `${baseName}_${Date.now()}.xlsx`,
+          },
+          (error, result) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+            if (!result) {
+              reject(new Error("Cloudinary returned no upload result."));
+              return;
+            }
+            resolve(result);
           }
         );
-        fileUrl = uploadResponse.secure_url;
-      } catch (archiveError) {
-        console.error("Assessment workbook archival failed:", {
-          name: archiveError.name,
-          httpCode: archiveError.http_code,
-        });
-        fileArchiveWarning =
-          "Marks will be saved, but the source workbook could not be archived. Check the Cloudinary credentials and try uploading the workbook again to retain a downloadable copy.";
-      }
+        stream.end(buffer);
+      });
+      fileUrl = uploadResponse.secure_url;
+    } catch (archiveError) {
+      console.error("Assessment workbook archival failed:", {
+        name: archiveError.name,
+        httpCode: archiveError.http_code,
+      });
+      fileArchiveWarning =
+        "Marks will be saved, but the source workbook could not be archived. Check the Cloudinary credentials and try uploading the workbook again to retain a downloadable copy.";
     }
 
     

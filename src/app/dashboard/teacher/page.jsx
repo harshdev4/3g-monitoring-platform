@@ -13,24 +13,27 @@ import ProgressionCard from "@/components/teacher/ProgressionCard";
 import ActionEvidenceMonitoring from "@/components/teacher/ActionEvidenceMonitoring";
 import StudentPageStudentTableSection from "@/components/teacher/StudentPageTableSection";
 import TeacherStoreInitializer from "@/components/mapper/TeacherStoreInitializer";
+import BackButton from "@/components/dashboard/BackButton";
 
 const page = async () => {
-
   const cookieStore = await cookies();
-  const teacherEmail = getTeacherEmailFromSession(cookieStore.get(SESSION_COOKIE)?.value);
+  const teacherEmail = getTeacherEmailFromSession(
+    cookieStore.get(SESSION_COOKIE)?.value,
+  );
   const teacher = teacherEmail ? await getUser(teacherEmail) : null;
 
   if (!teacher) {
     redirect("/login");
   }
 
-  return ( 
+  return (
     <div>
       <TeacherStoreInitializer teacher={teacher} />
       <Header></Header>
+      <BackButton/>
       <div className="p-5">
         <UserWorkSpace
-          user={`${teacher.role == 'teacher' && 'Teacher' || teacher.role == 'student' && 'Student' || teacher.role == 'dean' || 'Dean'}`}
+          user={`${(teacher.role == "teacher" && "Teacher") || (teacher.role == "student" && "Student") || teacher.role == "dean" || "Dean"}`}
           name={teacher.name}
           designation={teacher.designation}
           pageTitle="Dashboard"
@@ -52,7 +55,7 @@ const page = async () => {
             note=""
           />
 
-          <ProgressionCard/>
+          <ProgressionCard />
         </div>
 
         {/* Students */}

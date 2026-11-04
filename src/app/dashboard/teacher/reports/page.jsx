@@ -15,7 +15,6 @@ const ASSESSMENTS = [
   { value: "pre-mse", label: "Pre-MSE" },
   { value: "mse-1", label: "MSE-1" },
   { value: "mse-2", label: "MSE-2" },
-  { value: "ese", label: "ESE" },
 ];
 
 const REPORT_TYPES = [
@@ -25,41 +24,65 @@ const REPORT_TYPES = [
   { value: "Gallant", label: "Gallant students" },
 ];
 
-const REPORT_COLUMNS = [
-  { key: "student_name", label: "Student Name", width: 28 },
-  { key: "student_rank", label: "Rank", width: 12 },
-  { key: "university_roll_no", label: "University Roll Number", width: 24 },
-  { key: "program_name", label: "Program", width: 16 },
-  { key: "semester", label: "Semester", width: 12 },
-  { key: "section", label: "Section", width: 12 },
-  { key: "academic_year", label: "Academic Year", width: 16 },
-  { key: "course_code", label: "Course Code", width: 18 },
-  { key: "course_name", label: "Course Name", width: 30 },
-  { key: "assessment_type", label: "Assessment", width: 16 },
-  { key: "obtained_mark", label: "Obtained Marks", width: 18 },
-  { key: "max_mark", label: "Maximum Marks", width: 18 },
-  { key: "obtained_percentage", label: "Obtained Percentage", width: 22 },
-  { key: "attendance_pct", label: "Attendance (%)", width: 18 },
-  { key: "sgpa", label: "Previous SGPA", width: 16 },
-  { key: "three_g_category", label: "3G Category", width: 18 },
-  { key: "backlog", label: "Backlog", width: 12 },
-  { key: "faculty_observation", label: "Faculty Observation", width: 40 },
-  { key: "actions_taken", label: "Actions Taken / Teacher Evidence URL", width: 55 },
-  { key: "assessment_uploaded_at", label: "Assessment Uploaded", width: 24 },
-];
-
 const ASSESSMENT_LABELS = Object.fromEntries(
   ASSESSMENTS.map(({ value, label }) => [value, label])
 );
-const NUMERIC_COLUMNS = new Set([
-  "semester",
-  "obtained_mark",
-  "max_mark",
-  "obtained_percentage",
-  "attendance_pct",
-  "sgpa",
-  "student_rank",
-]);
+
+const getColumnLetter = (column) => {
+  let letter = "";
+  let number = column;
+  while (number > 0) {
+    const remainder = (number - 1) % 26;
+    letter = String.fromCharCode(65 + remainder) + letter;
+    number = Math.floor((number - 1) / 26);
+  }
+  return letter;
+};
+
+function createReportLayout() {
+  const columns = [
+    { key: "serial", label: "S. No.", width: 8 },
+    { key: "university_roll_no", label: "Univ. Roll. No.", width: 20 },
+    { key: "student_name", label: "Student Name", width: 28 },
+  ];
+  const fixedHeaders = columns.map((column, index) => ({
+    ...column,
+    start: index + 1,
+  }));
+  const groups = [
+    {
+      label: "Pre-MSE (Based on previous semester performance)",
+      start: 4,
+      fields: [
+        { key: "pre_mse_mark", maxKey: "pre_mse_max_mark", label: "Marks", width: 18, kind: "marks" },
+        { key: "pre_mse_observation", label: "Observations", width: 34 },
+      ],
+    },
+    {
+      label: "MSE-1",
+      start: 6,
+      fields: [
+        { key: "mse_1_attendance_pct", label: "Attendance (%)", width: 16 },
+        { key: "mse_1_mark", maxKey: "mse_1_max_mark", label: "Marks", width: 18, kind: "marks" },
+        { key: "mse_1_observation", label: "Observations", width: 34 },
+      ],
+    },
+    {
+      label: "MSE-2",
+      start: 9,
+      fields: [
+        { key: "mse_2_attendance_pct", label: "Attendance (%)", width: 16 },
+        { key: "mse_2_mark", maxKey: "mse_2_max_mark", label: "Marks", width: 18, kind: "marks" },
+        { key: "mse_2_observation", label: "Observations", width: 34 },
+      ],
+    },
+  ];
+  columns.push(
+    ...groups.flatMap(({ fields }) => fields),
+    { key: "category_movement", label: "Category Movement", width: 30 }
+  );
+  return { columns, fixedHeaders, groups };
+}
 
 const getSafeFilePart = (value) =>
   String(value || "")
@@ -67,33 +90,16 @@ const getSafeFilePart = (value) =>
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
     .replace(/\s+/g, "-");
 
-const formatReportValue = (value, key) => {
+const formatReportValue = (value) => {
   if (value == null || value === "") return "";
-  if (key === "backlog") return value ? "Yes" : "No";
-  if (key === "assessment_uploaded_at") {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-      ? ""
-      : date.toLocaleString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-  }
-  if (NUMERIC_COLUMNS.has(key)) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : "";
-  }
   return value;
 };
 
-async function downloadReport({ report, teacher, title, filters }) {
+async function downloadReport({ report, actions = [], teacher, title, filters }) {
   const [
     { createWorkbook, addWorksheet },
     { workbookToBytes },
-    { appendRow, mergeCells, setCell, setColumnWidths, setFreezePanes },
+    { appendRow, mergeCells, setCell, setColumnWidths, setFreezePanes, setRowHeight },
     {
       makeAlignment,
       makeBorder,
@@ -112,19 +118,17 @@ async function downloadReport({ report, teacher, title, filters }) {
 
   const workbook = createWorkbook();
   const worksheet = addWorksheet(workbook, "Student Report");
-  const lastColumn = REPORT_COLUMNS.length;
-  const lastColumnLetter = String.fromCharCode(64 + lastColumn);
-  const headerBorder = makeBorder({
+  const layout = createReportLayout();
+  const { columns } = layout;
+  const lastColumnLetter = getColumnLetter(columns.length);
+  const cellBorder = makeBorder({
     top: makeSide({ style: "thin", color: makeColor({ rgb: "FFB8C7DD" }) }),
     bottom: makeSide({ style: "thin", color: makeColor({ rgb: "FFB8C7DD" }) }),
     left: makeSide({ style: "thin", color: makeColor({ rgb: "FFB8C7DD" }) }),
     right: makeSide({ style: "thin", color: makeColor({ rgb: "FFB8C7DD" }) }),
   });
-  const bodyBorder = makeBorder({
-    bottom: makeSide({ style: "thin", color: makeColor({ rgb: "FFE2E8F0" }) }),
-  });
   const titleStyle = registerCellStyle(workbook, {
-    font: makeFont({ name: "Calibri", size: 18, bold: true, color: makeColor({ rgb: "FF17365D" }) }),
+    font: makeFont({ name: "Calibri", size: 16, bold: true, color: makeColor({ rgb: "FF17365D" }) }),
     alignment: makeAlignment({ horizontal: "center", vertical: "center" }),
   });
   const metadataStyle = registerCellStyle(workbook, {
@@ -138,58 +142,142 @@ async function downloadReport({ report, teacher, title, filters }) {
       fgColor: makeColor({ rgb: "FF1F4E78" }),
     }),
     alignment: makeAlignment({ horizontal: "center", vertical: "center", wrapText: true }),
-    border: headerBorder,
+    border: cellBorder,
   });
   const bodyStyle = registerCellStyle(workbook, {
     font: makeFont({ name: "Calibri", size: 10 }),
     alignment: makeAlignment({ vertical: "center", wrapText: true }),
-    border: bodyBorder,
+    border: cellBorder,
+  });
+  const persistentGradualStyle = registerCellStyle(workbook, {
+    font: makeFont({ name: "Calibri", size: 10 }),
+    fill: makePatternFill({
+      patternType: "solid",
+      fgColor: makeColor({ rgb: "FFFFF2CC" }),
+    }),
+    alignment: makeAlignment({ vertical: "center", wrapText: true }),
+    border: cellBorder,
+  });
+  const actionHeadingStyle = registerCellStyle(workbook, {
+    font: makeFont({ name: "Calibri", size: 11, bold: true, color: makeColor({ rgb: "FF17365D" }) }),
+    alignment: makeAlignment({ vertical: "center", wrapText: true }),
+  });
+  const actionTextStyle = registerCellStyle(workbook, {
+    font: makeFont({ name: "Calibri", size: 10 }),
+    alignment: makeAlignment({ vertical: "center", wrapText: true }),
   });
 
-  setCell(worksheet, 1, 1, title, titleStyle);
+  setCell(worksheet, 1, 1, `Department of ${teacher.department}`, titleStyle);
   mergeCells(worksheet, `A1:${lastColumnLetter}1`);
   setCell(
     worksheet,
     2,
     1,
-    `Program: ${filters.program}   |   Class: ${filters.section}   |   Semester: ${filters.semester}   |   Academic Year: ${filters.academicYear}`,
+    `Academic Session: ${filters.academicYear}   |   ${filters.program}   |   Semester ${filters.semester}   |   Section ${filters.section}`,
     metadataStyle
   );
   mergeCells(worksheet, `A2:${lastColumnLetter}2`);
+  const learnerType = REPORT_TYPES.find((type) => type.value === filters.reportType)?.label || "Student";
   setCell(
     worksheet,
     3,
     1,
-    `Course: ${filters.courseName} (${filters.courseCode})   |   Assessment: ${ASSESSMENT_LABELS[filters.assessment]}`,
-    metadataStyle
+    `${filters.program.toUpperCase()} ${learnerType.toUpperCase()} MONITORING REPORT - ${ASSESSMENT_LABELS[filters.assessment].toUpperCase()}`,
+    titleStyle
   );
   mergeCells(worksheet, `A3:${lastColumnLetter}3`);
-  setCell(
-    worksheet,
-    4,
-    1,
-    `Generated by: ${teacher.name} (${teacher.empId})   |   Generated: ${new Date().toLocaleString("en-GB")}`,
-    metadataStyle
-  );
+  setCell(worksheet, 4, 1, `Faculty: ${teacher.name} (${teacher.empId})`, metadataStyle);
   mergeCells(worksheet, `A4:${lastColumnLetter}4`);
-  setCell(worksheet, 5, 1, "", metadataStyle);
-  appendRow(worksheet, REPORT_COLUMNS.map(({ label }) => label), {
-    styleIds: REPORT_COLUMNS.map(() => headerStyle),
-  });
+  setCell(worksheet, 5, 1, `Subject Name: ${filters.courseName}`, metadataStyle);
+  mergeCells(worksheet, `A5:F5`);
+  setCell(worksheet, 5, 7, `Subject Code: ${filters.courseCode}`, metadataStyle);
+  mergeCells(worksheet, `G5:${lastColumnLetter}5`);
 
-  report.forEach((student) => {
+  for (const column of layout.fixedHeaders) {
+    setCell(worksheet, 7, column.start, column.label, headerStyle);
+    mergeCells(worksheet, `${getColumnLetter(column.start)}7:${getColumnLetter(column.start)}8`);
+  }
+
+  for (const group of layout.groups) {
+    setCell(worksheet, 7, group.start, group.label, headerStyle);
+    const end = group.start + group.fields.length - 1;
+    mergeCells(worksheet, `${getColumnLetter(group.start)}7:${getColumnLetter(end)}7`);
+    group.fields.forEach((field, index) => {
+      setCell(worksheet, 8, group.start + index, field.label, headerStyle);
+    });
+  }
+
+  const movementColumn = columns.length;
+  setCell(worksheet, 7, movementColumn, "Category Movement", headerStyle);
+  mergeCells(
+    worksheet,
+    `${getColumnLetter(movementColumn)}7:${getColumnLetter(movementColumn)}8`
+  );
+
+  report.forEach((student, index) => {
+    const stagesToInclude = filters.assessment === "mse-2"
+      ? new Set(["pre_mse", "mse_1", "mse_2"])
+      : filters.assessment === "mse-1"
+        ? new Set(["pre_mse", "mse_1"])
+        : new Set(["pre_mse"]);
+    const styleId = student.persistent_gradual
+      ? persistentGradualStyle
+      : bodyStyle;
     appendRow(
       worksheet,
-      REPORT_COLUMNS.map(({ key }) => formatReportValue(student[key], key)),
-      { styleIds: REPORT_COLUMNS.map(() => bodyStyle) }
+      columns.map((column) => {
+        if (column.key === "serial") return index + 1;
+        if (column.key === "category_movement") return student.category_movement;
+        const stage = column.key.startsWith("pre_mse_")
+          ? "pre_mse"
+          : column.key.startsWith("mse_1_")
+            ? "mse_1"
+            : column.key.startsWith("mse_2_")
+              ? "mse_2"
+              : null;
+        if (stage && !stagesToInclude.has(stage)) return "";
+        if (column.kind === "marks") {
+          const mark = formatReportValue(student[column.key]);
+          const maximum = formatReportValue(student[column.maxKey]);
+          return mark === "" ? "" : maximum === "" ? mark : `${mark} / ${maximum}`;
+        }
+        return formatReportValue(student[column.key]);
+      }),
+      { styleIds: columns.map(() => styleId) }
     );
+    setRowHeight(worksheet, 9 + index, 32);
   });
+
+  const actionsStart = 9 + report.length + 1;
+  setCell(
+    worksheet,
+    actionsStart,
+    1,
+    `Actions Taken ${ASSESSMENT_LABELS[filters.assessment]}:`,
+    actionHeadingStyle
+  );
+  mergeCells(worksheet, `A${actionsStart}:${lastColumnLetter}${actionsStart}`);
+  const actionItems = actions.length
+    ? actions.map((action) => `☒ ${action}`)
+    : ["No teacher actions have been submitted for this assessment and report filter."];
+  actionItems.forEach((action, index) => {
+    const row = actionsStart + index + 1;
+    setCell(worksheet, row, 1, action, actionTextStyle);
+    mergeCells(worksheet, `A${row}:${lastColumnLetter}${row}`);
+    setRowHeight(worksheet, row, 30);
+  });
+  const observationRow = actionsStart + actionItems.length + 1;
+  setCell(worksheet, observationRow, 1, "Observation:", actionHeadingStyle);
+  mergeCells(worksheet, `A${observationRow}:${lastColumnLetter}${observationRow}`);
+  setRowHeight(worksheet, observationRow, 40);
+  setCell(worksheet, observationRow + 2, 1, "Signature of Faculty Member", metadataStyle);
+  mergeCells(worksheet, `A${observationRow + 2}:D${observationRow + 2}`);
 
   setColumnWidths(
     worksheet,
-    REPORT_COLUMNS.map(({ width }) => width)
+    columns.map(({ width }) => width)
   );
-  setFreezePanes(worksheet, "A7");
+  setFreezePanes(worksheet, "A9");
 
   const bytes = await workbookToBytes(workbook);
   const buffer = bytes.buffer.slice(
@@ -306,6 +394,7 @@ export default function TeacherReportsPage() {
       const title = `${REPORT_TYPES.find((type) => type.value === reportType)?.label} - ${ASSESSMENT_LABELS[assessment]}`;
       await downloadReport({
         report: result.rows,
+        actions: result.actions,
         teacher: result.teacher ?? { name: teacherName, empId: teacherEmpId },
         title,
         filters: {
@@ -316,6 +405,7 @@ export default function TeacherReportsPage() {
           courseName: selectedCourse?.course ?? courseCode,
           academicYear,
           assessment,
+          reportType,
         },
       });
       setSuccess(`${result.rows.length} student record(s) included in the downloaded report.`);
@@ -343,9 +433,9 @@ export default function TeacherReportsPage() {
               Student Reports
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Generate formatted Excel reports for Gradual, Growing, or Gallant
-              students, or download the complete master list for a selected
-              assessment and course.
+              Generate the learner monitoring format for the selected assessment.
+              Earlier assessment fields are included only when they apply to the
+              selected stage.
             </p>
           </header>
 
@@ -460,7 +550,7 @@ export default function TeacherReportsPage() {
             <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-slate-500">
                 Generated by {teacherName || "signed-in teacher"}{teacherEmpId ? ` (${teacherEmpId})` : ""}.
-                The workbook also records the verified teacher identity and generation time.
+                The workbook records the verified teacher identity.
               </p>
               <button
                 type="submit"
@@ -479,11 +569,12 @@ export default function TeacherReportsPage() {
               <div>
                 <h2 className="text-sm font-semibold text-blue-900">Report contents</h2>
                 <p className="mt-1 text-xs leading-5 text-blue-800">
-                  Each workbook includes student identity, program, class, course,
-                  academic year, assessment, marks, percentage, attendance, class
-                  rank, 3G category, faculty observation, and upload timestamp.
-                  Category assignment follows the dashboard&apos;s dense-rank and
-                  percentage rules.
+                  Pre-MSE includes previous-performance marks and observations.
+                  MSE-1 also includes available Pre-MSE results, and MSE-2
+                  includes available results from all three stages. Category
+                  Movement compares the selected category with the previous stage.
+                  Students who remain Gradual are highlighted, and teacher actions
+                  for the selected assessment appear below the student list.
                 </p>
               </div>
             </div>
