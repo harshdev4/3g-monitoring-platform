@@ -20,6 +20,9 @@ const AssignedActions = ({
       </h2>
 
       <div className="mt-3 space-y-4">
+        {visibleActions.length === 0 && (
+          <p className="text-xs text-slate-500">No actions are assigned for this course.</p>
+        )}
         {visibleActions.map((action) => (
           <div key={action.id}>
             <p className="text-xs font-semibold text-[#20375D]">

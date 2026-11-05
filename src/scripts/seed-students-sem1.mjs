@@ -2,7 +2,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import XLSX from "xlsx";
+import { fromBuffer, loadWorkbook } from "@office-kit/xlsx/io";
+import { getSheetByIndex } from "@office-kit/xlsx/workbook";
+import { iterRows } from "@office-kit/xlsx/worksheet";
+import { getCellDisplayText } from "@office-kit/xlsx/styles";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -21,19 +24,21 @@ const pool = new Pool({
 });
 
 // Read the Excel workbook.
-function extractStudents() {
+async function extractStudents() {
     if (!fs.existsSync(EXCEL_FILE)) {
         throw new Error(`Excel file not found: ${EXCEL_FILE}`);
     }
 
-    const workbook = XLSX.readFile(EXCEL_FILE);
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-    const rows = XLSX.utils.sheet_to_json(worksheet, {
-        header: 1,
-        defval: null,
-        raw: false,
-    });
+    const workbook = await loadWorkbook(
+        fromBuffer(fs.readFileSync(EXCEL_FILE))
+    );
+    const worksheet = getSheetByIndex(workbook, 0);
+    if (!worksheet) {
+        throw new Error("Excel workbook does not contain a worksheet.");
+    }
+    const rows = Array.from(iterRows(worksheet), (row) =>
+        row.map((cell) => cell ? getCellDisplayText(workbook, cell) : null)
+    );
 
     // The column headings are on Excel row 4.
     const headers = rows[3].map((value) =>
@@ -135,7 +140,7 @@ async function seedStudents() {
         throw new Error("Set DATABASE_URL before running the seed.");
     }
 
-    const students = extractStudents();
+    const students = await extractStudents();
     const client = await pool.connect();
 
     try {

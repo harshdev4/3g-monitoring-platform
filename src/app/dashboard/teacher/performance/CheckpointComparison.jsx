@@ -17,6 +17,7 @@ const normalizeCheckpoint = (type) => {
     .replace(/\s+/g, " ");
 
   if (value === "baseline") return "Baseline";
+  if (value === "pre mse") return "Baseline";
   if (["mse 1", "mse i"].includes(value)) return "MSE 1";
   if (["mse 2", "mse ii"].includes(value)) return "MSE 2";
 
@@ -30,64 +31,56 @@ const CheckpointComparison = ({ apiEndpoint }) => {
   const [error, setError] = useState("");
 
   const semester = Number(filters?.semester);
-  const semesterValue = filters?.semester;
   const className = filters?.className;
   const courses = filters?.courses;
+  const academicYear = filters?.academicYear;
+  const hasFilters = Boolean(
+    semester && className && courses && academicYear && apiEndpoint
+  );
 
   const checkpoints =
     semester === 1 ? CHECKPOINTS.first : CHECKPOINTS.other;
 
-  
-useEffect(() => {
-  if (!semester || !className || !courses || !apiEndpoint) {
-    return;
-  }
+  useEffect(() => {
+    if (!hasFilters) {
+      return;
+    }
 
-  const controller = new AbortController();
+    const controller = new AbortController();
 
-  const fetchStudents = async () => {
-    try {
-      setLoading(true);
-      setError("");
+    async function fetchCheckpoints() {
+      try {
+        setLoading(true);
+        setError("");
 
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filters: {
-            semester,
-            className,
-            courses,
-          },
-        }),
-        signal: controller.signal,
-      });
+        const response = await fetch(apiEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filters: { semester, className, courses, academicYear },
+          }),
+          signal: controller.signal,
+        });
+        const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch checkpoint data");
-      }
-
-      const data = await response.json();  
-      setRecords(data.students ?? []);
-    } catch (error) {
-      if (error.name !== "AbortError") {
-        console.error(error);
-        setError("Unable to load checkpoint data.");
-        setRecords([]);
-      }
-    } finally {
-      if (!controller.signal.aborted) {
-        setLoading(false);
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to load checkpoint data.");
+        }
+        setRecords(data.students ?? []);
+      } catch (fetchError) {
+        if (!controller.signal.aborted) {
+          console.error("Checkpoint comparison request failed:", fetchError);
+          setError(fetchError.message || "Unable to load checkpoint data.");
+          setRecords([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
-  };
 
-  fetchStudents();
-
-  return () => controller.abort();
-}, [semester, className, courses, apiEndpoint]);
+    fetchCheckpoints();
+    return () => controller.abort();
+  }, [hasFilters, semester, className, courses, academicYear, apiEndpoint]);
 
 
   const comparisonData = useMemo(() => {
@@ -160,17 +153,25 @@ useEffect(() => {
             : Number(attendance.toFixed(1)),
       };
     });
-  }, [records, semester]);
+  }, [records, checkpoints]);
 
   return (
     <section className="rounded-lg border border-[#E5EAF1] bg-white p-4">
       <h2 className="text-[15px] font-semibold text-[#20375D]">
         Checkpoint comparison
       </h2>
+      <p className="mt-1 text-xs text-slate-500">
+        Average marks and pass rates compare students within the selected course and academic year.
+      </p>
 
       {error && (
         <p className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-600">
           {error}
+        </p>
+      )}
+      {!error && !hasFilters && (
+        <p className="mt-3 rounded-md bg-slate-50 p-3 text-sm text-slate-600">
+          Select a semester, class, course, and academic year to compare checkpoints.
         </p>
       )}
 
@@ -192,7 +193,16 @@ useEffect(() => {
           </thead>
 
           <tbody>
-            {loading ? (
+            {!hasFilters ? (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-3 py-6 text-center text-sm text-[#71809A]"
+                >
+                  Select the required filters to load comparison data.
+                </td>
+              </tr>
+            ) : loading ? (
               <tr>
                 <td
                   colSpan={4}

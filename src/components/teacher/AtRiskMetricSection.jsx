@@ -43,7 +43,12 @@ const AtRiskMetricSection = () => {
         {
             type: "",
             label: "Low attendance",
-            value: students.filter(st => st.attendance_pct < 75).length,
+            value: students.filter(st =>
+                st.attendance_pct != null &&
+                st.attendance_pct !== "" &&
+                Number.isFinite(Number(st.attendance_pct)) &&
+                Number(st.attendance_pct) < 75
+            ).length,
             description: "Attendance below 75%",
             iconClassName: "text-[#F59E0B]",
         },

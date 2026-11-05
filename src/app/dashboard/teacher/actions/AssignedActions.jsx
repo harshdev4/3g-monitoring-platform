@@ -34,7 +34,7 @@ const formatDate = (date) => {
   });
 };
 
-export default function AssignedActions({ filters }) {
+export default function AssignedActions({ filters, assignmentVersion = 0 }) {
   const router = useRouter();
   const empId = useTeacherStore((state) => state.empId);
 
@@ -63,6 +63,7 @@ export default function AssignedActions({ filters }) {
             program: filters.program || "",
             semester: filters.semester || "",
             course_code: filters.courses || "",
+            section: String(filters.section || "").replace(/^MCA-/, ""),
             assessment: filters.assessment || "",
             category: filters.category3G || "",
           },
@@ -81,13 +82,18 @@ export default function AssignedActions({ filters }) {
     filters.program,
     filters.semester,
     filters.courses,
+    filters.section,
     filters.assessment,
     filters.category3G,
   ]);
 
   useEffect(() => {
-    loadActions();
-  }, [loadActions]);
+    const timeoutId = window.setTimeout(() => {
+      void loadActions();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadActions, assignmentVersion]);
 
   // Navigate to the selected action while preserving filters.
   const openAction = (actionId) => {
@@ -102,7 +108,11 @@ export default function AssignedActions({ filters }) {
     }
 
     if (filters.courses) {
-      query.set("course_code", filters.courses);
+      query.set("courses", filters.courses);
+    }
+
+    if (filters.section) {
+      query.set("section", filters.section);
     }
 
     if (filters.assessment) {
@@ -110,7 +120,7 @@ export default function AssignedActions({ filters }) {
     }
 
     if (filters.category3G) {
-      query.set("category", filters.category3G);
+      query.set("category3G", filters.category3G);
     }
 
     const queryString = query.toString();

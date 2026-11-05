@@ -10,6 +10,7 @@ export async function GET(request) {
     const program = searchParams.get("program")?.trim() || null;
     const semesterValue = searchParams.get("semester")?.trim() || null;
     const courseCode = searchParams.get("course_code")?.trim() || null;
+    const section = searchParams.get("section")?.trim() || null;
     const assessment = searchParams.get("assessment")?.trim() || null;
     const category = searchParams.get("category")?.trim() || null;
 
@@ -54,6 +55,7 @@ export async function GET(request) {
         AND ($4::text IS NULL OR ce.course_id = $4)
         AND ($5::text IS NULL OR at.assessment_type = $5)
         AND ($6::text IS NULL OR at.target_category = $6)
+        AND ($7::text IS NULL OR s.section = $7)
         AND s.semester = ce.semester
       GROUP BY
         at.action_id,
@@ -70,6 +72,7 @@ export async function GET(request) {
       courseCode,
       assessment,
       category,
+      section,
     ]);
 
     return NextResponse.json({ actions: rows });

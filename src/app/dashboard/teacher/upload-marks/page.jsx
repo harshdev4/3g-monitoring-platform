@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import DashboardFilters from "@/components/teacher/DashboardFilters";
 import useTeacherStore from "@/store/useTeacherStore";
@@ -13,8 +13,8 @@ import ViewUploadHistory from "./fragments/ViewUploadHistory";
 import axios from "axios";
 import { Toaster, toast } from 'sonner';
 
-import { useEffect } from "react";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const UploadMarks = () => {
   // Core States
@@ -27,22 +27,26 @@ const UploadMarks = () => {
 
   // History State
   const [historyData, setHistoryData] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionWarning, setSubmissionWarning] = useState("");
 
   const activeFilters = useTeacherStore((state) => state.filters);
-  const loggedInTeacherId = useTeacherStore((state) =>  state.empId);
-  const [fileBase64, setFileBase64] = useState(null);
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await fetch("/api/marks/"); 
-        if (response.ok) {
-          const data = await response.json();
-          setHistoryData(data.history); 
+        const response = await fetch("/api/marks/");
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to load upload history.");
         }
+        setHistoryData(data.history ?? []);
       } catch (error) {
-        console.error("Failed to load history:", error);
+        setHistoryError(error.message || "Unable to load upload history.");
+      } finally {
+        setHistoryLoading(false);
       }
     };
     fetchHistory();
@@ -58,7 +62,7 @@ const UploadMarks = () => {
 
     });
 
-    
+
 
     const validatedRows = rows.map((row) => {
       const max = Number(row.maxMarks) || Number(overrideMax);
@@ -92,14 +96,55 @@ const UploadMarks = () => {
         statusText = 'Valid · Absent';
         correctedMarks = '—';
       }
-      return { ...row, absent, validationStatus: status, validationText: statusText, correctedMarks };
+      return {
+        ...row,
+        absent,
+        validationStatus: status,
+        validationText: statusText,
+        correctedMarks,
+        three_g_category: null,
+      };
+    });
+
+    const rankedRows = validatedRows
+      .map((row, index) => {
+        const max = Number(row.maxMarks) || Number(overrideMax);
+        const marks = Number(row.marks);
+        if (
+          row.validationStatus !== "valid" ||
+          row.absent === "Yes" ||
+          !Number.isFinite(marks) ||
+          !Number.isFinite(max) ||
+          max <= 0
+        ) {
+          return null;
+        }
+
+        return { index, percentage: (marks / max) * 100 };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.percentage - a.percentage);
+
+    let rank = 0;
+    let previousPercentage;
+    rankedRows.forEach(({ index, percentage }, position) => {
+      if (position === 0 || percentage !== previousPercentage) {
+        rank += 1;
+      }
+      validatedRows[index].three_g_category =
+        rank <= 10
+          ? "Gallant"
+          : percentage < 40
+            ? "Gradual"
+            : "Growing";
+      previousPercentage = percentage;
     });
 
     setParsedData(validatedRows);
     setErrorCount(errors);
   };
 
-  const processCSV = () => {
+  const processExcel = async () => {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -112,27 +157,33 @@ const UploadMarks = () => {
       const rawRows = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.trim());
-        if (cols.length < 5) continue;
+        if (cols.length < 6) continue;
         const cleanRoll = cols[0].replace(/[="]/g, '').trim();
         const cleanName = cols[1].replace(/"/g, '').trim();
-        rawRows.push({ roll: cleanRoll, name: cleanName, maxMarks: cols[2], marks: cols[3], attendance: cols[4]});
+        rawRows.push({ roll: cleanRoll, name: cleanName, maxMarks: cols[2], marks: cols[3], attendance: cols[4], facultyObservation: cols[5] });
       }
+
       runValidation(rawRows, maxMarks);
       setCurrentPhase(3); // Move to Phase 3: Validate & preview
-    };
-    reader.readAsText(file);
-    const base64Reader = new FileReader();
-    base64Reader.onload = (e) => {
-      setFileBase64(e.target.result);
-    };
-    base64Reader.readAsDataURL(file);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Unable to validate Excel file: ${message}`);
+    }
   };
 
   const handleFile = (selectedFile) => {
     if (!selectedFile) return;
-    if (!selectedFile.name.endsWith(".csv")) return toast.error("Please upload a .csv file.");
+    if (!selectedFile.name.toLowerCase().endsWith(".xlsx")) {
+      toast.error("Please upload an .xlsx file.");
+      return false;
+    }
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      toast.error("The maximum workbook size is 10 MB.");
+      return false;
+    }
     setFile(selectedFile);
     setCurrentPhase(2); // Selecting a file moves active step to 2 (Upload File)
+    return true;
   };
 
   const handleDrop = (e) => {
@@ -145,100 +196,109 @@ const UploadMarks = () => {
       const response = await axios.post("/api/teachers/getStudentForMarks", { filters: activeFilters });
       const students = response.data.students;
 
+      // const csv = [
+      //   "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,Observation",
+      //   ...students.map((student) =>
+      //     [
+      //      `"ID-${student.university_roll_no}"`, 
+      //       `"${(student.name ?? "").replace(/"/g, '""')}"`,
+      //       "",
+      //       "",
+      //       "",
+      //       "",
+      //     ].join(",")
+      //   ),
+      // ].join("\n");
+      
+
+      // const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" }));
       const csv = [
-        "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage",
+        "Roll_Number,Student_Name,Max_Marks,Marks_Obtained,Attendance_Percentage,Observation",
         ...students.map((student) =>
           [
-            `="${student.university_roll_no}"`, 
+           `="${student.university_roll_no}"`, 
             `"${(student.name ?? "").replace(/"/g, '""')}"`,
-            "", 
-            "", 
-            "", // Only 3 empty strings here (Max_Marks, Marks_Obtained, Attendance)
+            "", "", "", "",
           ].join(",")
         ),
       ].join("\n");
 
+      // NEW: Add this line!
       console.log("GENERATED CSV STRING:", csv);
 
       const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" }));
       const link = document.createElement("a");
       link.href = url;
-      // Added the timestamp back so you don't accidentally open an old cached file
-      link.download = `${activeFilters.courseName}-studentList-${Date.now()}.csv`;
+      link.download = `${activeFilters.courseName}-studentList.csv`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Failed to download marks template:", error);
+
       toast.error(
         error.response?.data?.message ||
         "Failed to download marks template. Please try again."
-      );
-    }
-  };
+    );
+  }
+};
 
- 
+
+
+
   const handleConfirmSubmission = async () => {
-   if (errorCount > 0) {
+    if (errorCount > 0) {
       return toast.warning("Please fix all errors before submitting.");
 
-         }
+    }
     try {
       setIsSubmitting(true);
 
- 
-      console.log(activeFilters.courses);
 
-      const payload = {
-        marksData: parsedData, // Validated rows from CSV
-        filters: {
-          className: activeFilters?.className || "MCA-1A",
+      if (
+        !activeFilters.className ||
+        !activeFilters.courses ||
+        !activeFilters.semester ||
+        !activeFilters.assessment ||
+        !activeFilters.academicYear
+      ) {
+        toast.error("Select a class, course, academic year, semester, and assessment before uploading.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("marksData", JSON.stringify(parsedData));
+      formData.append(
+        "filters",
+        JSON.stringify({
+          className: activeFilters.className,
           courseCode: activeFilters.courses,
-          semester: activeFilters?.semester,
-          assessment: activeFilters?.assessment,
-          academicYear: activeFilters?.academicYear || "2026-27",
-        },
-        fileMeta: {
-          fileName: file ? file.name : "marks_upload.csv",
-          errorCount: errorCount,
-          totalRows: parsedData.length,
-          base64Data: fileBase64
-        },
-        teacherId: loggedInTeacherId
-      };
+          semester: activeFilters.semester,
+          assessment: activeFilters.assessment,
+          academicYear: activeFilters.academicYear,
+        })
+      );
+      formData.append("errorCount", String(errorCount));
+      if (file) {
+        formData.append("file", file);
+      }
 
-      console.log(payload);
-
-      // 2. Send request to backend API
       const response = await fetch("/api/marks/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: formData,
       });
-      const result = await response.json();
+      const result = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to submit marks.");
+        throw new Error(
+          result?.error || `Failed to submit marks (HTTP ${response.status}).`
+        );
       }
-      const today = new Date();
-      const formattedDate = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-      const formattedTime = today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      const newRecord = {
-        id: `UP-${100 + historyData.length + 1}`,
-        filename: file ? file.name : "marks_upload.csv",
-        date: formattedDate,
-        time: formattedTime,
-        uploader: "Prof. Harsh Sharma",
-        class: activeFilters?.className || "MCA-1A",
-        subject: activeFilters?.courseName || "DBMS",
-        assessment: activeFilters?.assessment || "MSE-II",
-        rows: parsedData.length,
-        errors: 0,
-        status: "Success",
-      };
-
-      setHistoryData([result.newRecord, ...historyData]);
+      if (!result) {
+        throw new Error("The server returned an invalid response while submitting marks.");
+      }
+      setHistoryData((current) => [result.newRecord, ...current]);
+      setHistoryError("");
+      setSubmissionWarning(result.warning || "");
       setCurrentPhase(4); // Move to Phase 4: Confirm Submission / Success
     }
     catch (err) {
@@ -248,17 +308,16 @@ const UploadMarks = () => {
     }
   }
 
-  // Filter Setup
-  const filtersOption = [
-    { label: "Class / Section", value: "MCA-1A & MCA-1B", options: ["MCA-1A & MCA-1B"] },
-    { label: "Subject", value: "DBMS", options: ["DBMS"] },
-    { label: "Semester", value: "Semester I", options: ["Semester I"] },
-    { label: "Assessment", value: "MSE-II", options: ["MSE-II"] },
-  ];
-
   // Route to History View
   if (activeView === 'history') {
-    return <ViewUploadHistory onBackToUpload={() => setActiveView('upload')} historyData={historyData} />;
+    return (
+      <ViewUploadHistory
+        onBackToUpload={() => setActiveView('upload')}
+        historyData={historyData}
+        loading={historyLoading}
+        error={historyError}
+      />
+    );
   }
 
   return (
@@ -277,7 +336,7 @@ const UploadMarks = () => {
             onClick={() => setCurrentPhase(1)}   // Highlights "1 Select assessment" when clicking filters
             className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
-              <DashboardFilters filters={filtersOption} />
+              <DashboardFilters />
             </div>
           </div>
 
@@ -287,7 +346,7 @@ const UploadMarks = () => {
               file={file}
               handleDrop={handleDrop}
               handleFile={handleFile}
-              processCSV={processCSV}
+              processExcel={processExcel}
               maxMarks={maxMarks}
               downloadTemplate={downloadTemplate}
               currentPhase={currentPhase}
@@ -326,6 +385,15 @@ const UploadMarks = () => {
                 </div>
               </div>
 
+              {submissionWarning && (
+                <p
+                  role="status"
+                  className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800"
+                >
+                  {submissionWarning}
+                </p>
+              )}
+
               <div className="flex gap-3">
                 {/* Resets file data and sets phase to 1 (Select assessment) */}
                 <button
@@ -333,6 +401,7 @@ const UploadMarks = () => {
                     setFile(null);
                     setParsedData([]);
                     setErrorCount(0);
+                    setSubmissionWarning("");
                     setCurrentPhase(1); // Explicitly sets stepper back to '1 Select assessment'
                   }}
                   className="bg-white border border-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg text-xs shadow-sm hover:bg-slate-50 transition"

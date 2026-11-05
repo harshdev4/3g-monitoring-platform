@@ -64,7 +64,7 @@ export default function ActionFilters({ filters, setFilters }) {
     (state) => state.assignedCourses
   );
 
-  const courseRecords = assignedCourses ?? [];
+  const courseRecords = useMemo(() => assignedCourses ?? [], [assignedCourses]);
 
   // Program options come from the teacher's actual assignments.
   const programs = useMemo(() => {
@@ -143,6 +143,26 @@ export default function ActionFilters({ filters, setFilters }) {
     ? String(filters.courses)
     : courses[0]?.value ?? "";
 
+  const sections = useMemo(() => {
+    const values = unique(
+      courseRecords
+        .filter(
+          (course) =>
+            course.program === activeProgram &&
+            String(course.semester) === activeSemester &&
+            String(course.course_code) === activeCourse
+        )
+        .map((course) => course.className)
+    ).sort();
+    return values.map((value) => ({ value, label: value }));
+  }, [courseRecords, activeProgram, activeSemester, activeCourse]);
+
+  const activeSection = sections.some(
+    (option) => option.value === String(filters.section ?? "")
+  )
+    ? String(filters.section)
+    : sections[0]?.value ?? "";
+
   const isFirstSemester = Number(activeSemester) === 1;
 
   const assessments = isFirstSemester
@@ -173,6 +193,7 @@ export default function ActionFilters({ filters, setFilters }) {
       courses: activeCourse,
       courseName:
         courses.find((option) => option.value === activeCourse)?.label ?? "",
+      section: activeSection,
       assessment: validAssessment,
       category3G: validCategory,
     };
@@ -190,6 +211,7 @@ export default function ActionFilters({ filters, setFilters }) {
     activeProgram,
     activeSemester,
     activeCourse,
+    activeSection,
     courses,
     assessments,
   ]);
@@ -220,6 +242,7 @@ export default function ActionFilters({ filters, setFilters }) {
         semester: nextSemester,
         courses: nextCourse ? String(nextCourse.course_code) : "",
         courseName: nextCourse?.course ?? "",
+        section: "",
         assessment: nextAssessment,
         category3G: CATEGORIES[0]?.value ?? "",
       });
@@ -243,6 +266,7 @@ export default function ActionFilters({ filters, setFilters }) {
         semester: value,
         courses: nextCourse ? String(nextCourse.course_code) : "",
         courseName: nextCourse?.course ?? "",
+        section: "",
         assessment: nextAssessment,
         category3G: CATEGORIES[0]?.value ?? "",
       });
@@ -256,6 +280,7 @@ export default function ActionFilters({ filters, setFilters }) {
         courses: value,
         courseName:
           courses.find((option) => option.value === value)?.label ?? "",
+        section: "",
       });
 
       return;
@@ -287,6 +312,12 @@ export default function ActionFilters({ filters, setFilters }) {
       value: activeCourse,
     },
     {
+      key: "section",
+      label: "Section",
+      options: sections,
+      value: activeSection,
+    },
+    {
       key: "assessment",
       label: "Assessment type",
       options: assessments,
@@ -307,7 +338,7 @@ export default function ActionFilters({ filters, setFilters }) {
         Filters
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {fields.map((field) => (
           <SelectField
             key={field.key}

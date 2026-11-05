@@ -5,6 +5,7 @@ const initialFilters = {
     semester: "",
     className: "",
     courses: "",
+    academicYear: "",
     assessment: "",
     courseName:""
 };

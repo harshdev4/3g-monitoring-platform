@@ -1,18 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/dashboard/Header";
 import UserWorkSpace from "@/components/dashboard/UserWorkSpace";
 import DashboardFilters from "@/components/teacher/DashboardFilters";
-import AttentionContext from "./fragments/AttentionContext";
 import RecommendedFacultyFollowUp from "./fragments/RecommendedFacultyFollowUp";
 import AtRiskPageStudentTableSection from "@/components/teacher/AtRiskPageStudentTableSection";
 import AtRiskMetricSection from "@/components/teacher/AtRiskMetricSection";
+import useTeacherStore from "@/store/useTeacherStore";
 
 const Page = () => {
-  const [selectedStudent, setSelectedStudent] = useState();
-   const router = useRouter();
+  const router = useRouter();
+  const filters = useTeacherStore((state) => state.filters);
   return (
     <div>
       <Header />
@@ -21,14 +20,12 @@ const Page = () => {
         <UserWorkSpace
           user="Teacher"
           pageTitle="At-Risk Students"
-          description="Early support priorities · Academic Year 2026–27"
+          description={`Early support priorities · ${filters.academicYear ? `Academic Year ${filters.academicYear}` : "Assigned academic year"}`}
           welcomeMessage="At-Risk Student Monitoring"
           welcomeDescription="Identify students who need attention and plan timely interventions."
           showAction
           actionLabel="Assign support action"
-          onAction={() => {
-    router.push("/dashboard/teacher/actions");
-  }}
+          onAction={() => router.push("/dashboard/teacher/actions")}
           showWelcome={true}
         />
 
@@ -40,6 +37,11 @@ const Page = () => {
 
         <div className="mt-3">
           <AtRiskPageStudentTableSection/>
+        </div>
+        <div className="mt-3">
+          <RecommendedFacultyFollowUp
+            onCreateAction={() => router.push("/dashboard/teacher/actions")}
+          />
         </div>
       </div>
     </div>

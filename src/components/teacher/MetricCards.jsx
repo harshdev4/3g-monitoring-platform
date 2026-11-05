@@ -12,10 +12,13 @@ const iconMap = {
   stable: ShieldCheck,
 };
 
-const MetricCards = ({metrics=[]}) => {
+const MetricCards = ({ metrics = [], columns = 4 }) => {
+  const gridColumns = columns === 5
+    ? "sm:grid-cols-3 xl:grid-cols-5"
+    : "lg:grid-cols-4";
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className={`grid grid-cols-2 gap-3 ${gridColumns}`}>
       {metrics.map((metric) => {
         const Icon =  iconMap[metric?.type] || Users;
 

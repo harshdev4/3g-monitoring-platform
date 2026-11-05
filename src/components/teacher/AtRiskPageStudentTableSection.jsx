@@ -98,7 +98,13 @@ const AtRiskPageStudentTableSection = () => {
         retryCount,
     ]);
     const students = useFilterStudentsStore((state) => state.students);
-    const riskStudents = students.filter((student) => student.three_g_category === 'Gradual' || student.attendance_pct < 75);
+    const riskStudents = students.filter((student) =>
+        student.three_g_category === "Gradual" ||
+        (student.attendance_pct != null &&
+            student.attendance_pct !== "" &&
+            Number.isFinite(Number(student.attendance_pct)) &&
+            Number(student.attendance_pct) < 75)
+    );
     return (
         <StudentsTable title={"Students requiring attention"} subtitle={"High severity first"} categoryPage="At Risk" students={riskStudents} error={error} loading={loading} setRetryCount={setRetryCount} />
     );

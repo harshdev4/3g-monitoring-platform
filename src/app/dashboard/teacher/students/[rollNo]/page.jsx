@@ -3,6 +3,7 @@ import {
   getStudentProgressionHistory,
 } from "@/app/api/teachers/getProgressionData";
 import getDashboardStudents from "@/app/api/teachers/getDashboardStudents";
+import getStudentActionData from "@/app/api/teachers/getStudentActionData";
 import Header from "@/components/dashboard/Header";
 import UserWorkSpace from "@/components/dashboard/UserWorkSpace";
 import StudentCard from "./fragments/StudentCard";
@@ -14,6 +15,7 @@ import AssignedActions from "./fragments/AssignedActions";
 import EvidenceSubmissions from "./fragments/EvidenceSubmissions";
 import AttendanceSummary from "./fragments/AttendanceSummary";
 import TeacherObservations from "./fragments/TeacherObservations";
+import Link from "next/link";
 
 
 export default async function StudentDetailsPage({
@@ -43,6 +45,7 @@ export default async function StudentDetailsPage({
         className,
         courses,
         assessment,
+        academicYear: filters.academicYear,
       });
 
       student =
@@ -58,6 +61,14 @@ export default async function StudentDetailsPage({
           courses,
           rollNo,
         });
+        const actionData = await getStudentActionData({
+          rollNo: student.university_roll_no,
+          courseCode: courses,
+          semester: student.semester,
+          academicYear: student.academic_year,
+        });
+        student.actions = actionData.actions;
+        student.submissions = actionData.submissions;
       }
     }
   } catch (error) {
@@ -189,13 +200,13 @@ const assessmentName = latestAssessment?.label ?? "Assessment";
     },
     {
       label: "Assigned actions",
-      value: "N/A",
-      description: "Backend data not available",
+      value: String(student.assigned_actions_count ?? 0),
+      description: "Actions assigned for this course",
     },
     {
       label: "Evidence submitted",
-      value: "N/A",
-      description: "Backend data not available",
+      value: String(student.evidence_submitted_count ?? 0),
+      description: "Submissions with evidence",
     },
   ];
 
@@ -241,11 +252,24 @@ const assessmentName = latestAssessment?.label ?? "Assessment";
         <UserWorkSpace
           user="Teacher"
           pageTitle={student.name}
-          description={`Roll ${student.university_roll_no} · MCA-${student.section} · Semester ${student.semester} · Academic Year 2026–27`}
-          showAction
-          actionLabel="Assign action"
+          description={`Roll ${student.university_roll_no} · MCA-${student.section} · Semester ${student.semester} · Academic Year ${student.academic_year ?? "—"}`}
           showWelcome={false}
         />
+        <div className="mt-3">
+          <Link
+            href={`/dashboard/teacher/actions?${new URLSearchParams({
+              program: student.program_name ?? "MCA",
+              semester: String(student.semester),
+              courses: String(courses),
+              courseName: String(subjectName),
+              assessment: String(assessment),
+              category3G: String(student.three_g_category ?? ""),
+            }).toString()}`}
+            className="inline-flex rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+          >
+            View and assign eligible actions
+          </Link>
+        </div>
 
         <div className="mt-4">
           <StudentCard student={student} />
@@ -292,7 +316,13 @@ const assessmentName = latestAssessment?.label ?? "Assessment";
             attendance={attendancePercentage}
           />
 
-          <TeacherObservations />
+          <TeacherObservations
+            studentId={student.university_roll_no}
+            courseCode={String(courses)}
+            semester={student.semester}
+            academicYear={student.academic_year}
+            assessment={assessment}
+          />
         </div>
       </main>
     </div>

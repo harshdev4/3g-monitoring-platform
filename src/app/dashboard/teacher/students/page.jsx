@@ -37,7 +37,7 @@ const Page = () => {
     "Assigned classes",
   filters.program,
   filters.semester ? `Semester ${filters.semester}` : "",
-  "Academic Year 2026–27",
+  filters.academicYear ? `Academic Year ${filters.academicYear}` : "Assigned academic year",
 ]
   .filter(Boolean)
   .join(" · ");

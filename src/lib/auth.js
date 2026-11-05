@@ -4,23 +4,37 @@ const SESSION_COOKIE = "teacher_session";
 
 function getSessionSecret() {
   const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
-  if (!secret) throw new Error("JWT_SECRET must be configured for faculty sessions. Restart the app after updating .env.");
+  if (!secret) throw new Error("JWT_SECRET must be configured for user sessions. Restart the app after updating .env.");
   return secret;
 }
 
-export function createTeacherSession(email) {
-  return jwt.sign({ sub: email }, getSessionSecret(), { algorithm: "HS256" });
+export function createUserSession(email, role) {
+  return jwt.sign({ sub: email, role }, getSessionSecret(), { algorithm: "HS256" });
 }
 
-export function getTeacherEmailFromSession(token) {
+export function createTeacherSession(email) {
+  return createUserSession(email, "teacher");
+}
+
+export function getSessionFromToken(token) {
   if (!token) return null;
 
   try {
     const claims = jwt.verify(token, getSessionSecret(), { algorithms: ["HS256"] });
-    return typeof claims.sub === "string" && claims.sub.includes("@") ? claims.sub : null;
+    if (typeof claims.sub !== "string" || !claims.sub.includes("@")) return null;
+    return {
+      email: claims.sub,
+      role: typeof claims.role === "string" ? claims.role : null,
+    };
   } catch {
     return null;
   }
+}
+
+export function getTeacherEmailFromSession(token) {
+  const session = getSessionFromToken(token);
+  if (session?.role === "student") return null;
+  return session?.email ?? null;
 }
 
 export { SESSION_COOKIE };

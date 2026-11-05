@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import pool from "@/config/db.config";
-import { createTeacherSession } from "@/lib/auth";
+import { createUserSession } from "@/lib/auth";
 
 export async function POST(request) {
   try {
@@ -8,14 +8,15 @@ export async function POST(request) {
     const identifier = typeof email === "string" ? email.trim() : "";
 
     if (!identifier || typeof password !== "string" || !password) {
-      return NextResponse.json({ error: "Enter your email or employee ID and password." }, { status: 400 });
+      return NextResponse.json({ error: "Enter your registered email or employee ID and password." }, { status: 400 });
     }
 
     const result = await pool.query(
-      `SELECT u.mail_id, u.password
+      `SELECT u.mail_id, u.password, u.role
        FROM users u
-       JOIN teachers t ON t.user_id = u.unique_id
-       WHERE LOWER(u.mail_id) = LOWER($1) OR t.emp_id = $1
+       LEFT JOIN teachers t ON t.user_id = u.unique_id
+       WHERE LOWER(u.mail_id) = LOWER($1)
+          OR (u.role IN ('teacher', 'dean') AND t.emp_id = $1)
        LIMIT 1`,
       [identifier]
     );
@@ -24,8 +25,13 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid email, employee ID, or password." }, { status: 401 });
     }
 
-    const session = createTeacherSession(user.mail_id);
-    const response = NextResponse.json({ ok: true });
+    const session = createUserSession(user.mail_id, user.role);
+    const dashboard = user.role === "student"
+      ? "/dashboard/student"
+      : user.role === "dean"
+        ? "/dashboard/dean"
+        : "/dashboard/teacher";
+    const response = NextResponse.json({ ok: true, redirectTo: dashboard });
     response.cookies.set("teacher_session", session, {
       httpOnly: true,
       sameSite: "lax",
@@ -35,7 +41,7 @@ export async function POST(request) {
     });
     return response;
   } catch (error) {
-    console.error("Faculty sign in failed:", error);
+    console.error("Sign in failed:", error);
     return NextResponse.json({ error: "Unable to sign in right now." }, { status: 500 });
   }
 }

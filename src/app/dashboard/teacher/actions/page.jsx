@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ClipboardList } from "lucide-react";
 
 import Header from "@/components/dashboard/Header";
@@ -11,13 +12,19 @@ import AssignedActions from "./AssignedActions";
 import TeacherSubmissions from "@/components/teacher/TeacherSubmissions";
 
 export default function ActionsPage() {
-  const [filters, setFilters] = useState({
-    program: "",
-    semester: "",
-    courses: "",
-    courseName: "",
-    assessment: "",
-    category3G: "",
+  const searchParams = useSearchParams();
+  const [assignmentVersion, setAssignmentVersion] = useState(0);
+  const [filters, setFilters] = useState(() => {
+    const program = searchParams.get("program");
+    return {
+      program: program ?? "",
+      semester: searchParams.get("semester") ?? "",
+      courses: searchParams.get("courses") ?? "",
+      section: searchParams.get("section") ?? "",
+      courseName: searchParams.get("courseName") ?? "",
+      assessment: searchParams.get("assessment") ?? "",
+      category3G: searchParams.get("category3G") ?? "",
+    };
   });
 
   return (
@@ -57,11 +64,18 @@ export default function ActionsPage() {
               </div>
             </div>
 
-            <ActionList filters={filters} />
+            <ActionList
+              key={`${filters.assessment}:${filters.category3G}`}
+              filters={filters}
+              onAssigned={() => setAssignmentVersion((version) => version + 1)}
+            />
           </section>
 
           <section>
-            <AssignedActions filters={filters} />
+            <AssignedActions
+              filters={filters}
+              assignmentVersion={assignmentVersion}
+            />
           </section>
           <section>
             <TeacherSubmissions filters={filters} />
